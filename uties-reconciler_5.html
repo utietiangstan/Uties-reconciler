@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Uties Reconciler</title>
+<meta name="theme-color" content="#0b6e4f">
+<meta name="description" content="Uties Reconciler — offline daily reconciliation app for fuel stations, generator diesel, shop, restaurant, staff and cash — built for low/no-internet environments.">
+<style>
+:root{
+  --green:#0b6e4f;
+  --green-dark:#075038;
+  --green-light:#e6f4ee;
+  --amber:#b8860b;
+  --amber-light:#fff6e0;
+  --red:#b3261e;
+  --red-light:#fdeceb;
+  --ink:#1a2420;
+  --ink-soft:#5b6b64;
+  --line:#dbe6e0;
+  --paper:#ffffff;
+  --bg:#f4f7f5;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(10,30,20,0.08), 0 1px 2px rgba(10,30,20,0.06);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.45;
+  padding-bottom:70px;
+}
+a{color:var(--green);}
+header.app-header{
+  background:linear-gradient(135deg,var(--green),var(--green-dark));
+  color:#fff;
+  padding:14px 16px 10px;
+  position:sticky;
+  top:0;
+  z-index:50;
+  box-shadow:var(--shadow);
+}
+.app-header .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.app-header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px;}
+.app-header .sub{font-size:12px;opacity:.9;margin-top:2px;}
+.header-actions{display:flex;gap:8px;align-items:center;}
+select.role-switch{
+  background:rgba(255,255,255,.15);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.4);
+  border-radius:8px;
+  padding:6px 8px;
+  font-size:12.5px;
+}
+select.role-switch option{color:#000;}
+nav.tabs{
+  display:flex;
+  overflow-x:auto;
+  gap:4px;
+  background:var(--green-dark);
+  padding:0 6px;
+  scrollbar-width:thin;
+  position:sticky;
+  top:56px;
+  z-index:49;
+}
+nav.tabs::-webkit-scrollbar{height:4px;}
+nav.tabs button{
+  flex:0 0 auto;
+  background:transparent;
+  border:none;
+  color:rgba(255,255,255,.75);
+  padding:10px 12px;
+  font-size:12.5px;
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  white-space:nowrap;
+}
+nav.tabs button.active{
+  color:#fff;
+  border-bottom-color:#fff;
+  font-weight:600;
+}
+main{max-width:980px;margin:0 auto;padding:14px 12px 40px;}
+.view{display:none;}
+.view.active{display:block;animation:fade .15s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
+.card{
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--green-dark);display:flex;align-items:center;gap:8px;}
+.card h2 .badge{
+  font-size:11px;font-weight:600;background:var(--green-light);color:var(--green-dark);
+  padding:2px 8px;border-radius:20px;
+}
+.card .hint{font-size:12px;color:var(--ink-soft);margin:-4px 0 10px;}
+.grid{display:grid;gap:10px;}
+.grid.cols-2{grid-template-columns:1fr 1fr;}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:640px){
+  .grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr 1fr;}
+}
+label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:3px;font-weight:600;}
+input,select,textarea{
+  width:100%;
+  padding:8px 9px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  font-size:14px;
+  background:#fff;
+  color:var(--ink);
+  font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:0;border-color:var(--green);}
+textarea{resize:vertical;min-height:50px;}
+.field{margin-bottom:10px;}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green);color:#fff;border:none;border-radius:8px;
+  padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;
+}
+.btn:hover{background:var(--green-dark);}
+.btn.secondary{background:#fff;color:var(--green-dark);border:1px solid var(--green);}
+.btn.danger{background:var(--red);}
+.btn.ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+.btn.small{padding:5px 9px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btnbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+table.tight th, table.tight td{padding:6px 6px;}
+th,td{text-align:left;padding:8px 7px;border-bottom:1px solid var(--line);vertical-align:middle;}
+th{color:var(--ink-soft);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;}
+tbody tr:hover{background:#fafcfb;}
+.tablewrap{overflow-x:auto;}
+td input, td select{padding:6px 7px;font-size:13px;min-width:70px;}
+.num{text-align:right;font-variant-numeric:tabular-nums;}
+.right{text-align:right;}
+.center{text-align:center;}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.tag.ok{background:var(--green-light);color:var(--green-dark);}
+.tag.warn{background:var(--amber-light);color:var(--amber);}
+.tag.bad{background:var(--red-light);color:var(--red);}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:720px){.kpis{grid-template-columns:1fr 1fr;}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);}
+.kpi .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;font-weight:700;letter-spacing:.3px;}
+.kpi .value{font-size:20px;font-weight:800;margin-top:4px;color:var(--ink);}
+.kpi .value.pos{color:var(--green-dark);}
+.kpi .value.neg{color:var(--red);}
+.kpi .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+.alert{
+  border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:8px;display:flex;gap:8px;align-items:flex-start;
+}
+.alert.bad{background:var(--red-light);color:var(--red);border:1px solid #f3c6c3;}
+.alert.warn{background:var(--amber-light);color:#7a5c05;border:1px solid #f0dca6;}
+.alert.ok{background:var(--green-light);color:var(--green-dark);border:1px solid #bfe3d2;}
+.row-actions{display:flex;gap:6px;}
+.icon-btn{
+  background:transparent;border:none;cursor:pointer;color:var(--ink-soft);font-size:15px;padding:3px 6px;border-radius:6px;
+}
+.icon-btn:hover{background:var(--line);}
+.empty{color:var(--ink-soft);font-size:13px;padding:14px 4px;text-align:center;}
+.section-title{font-size:13px;font-weight:700;color:var(--ink-soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.4px;}
+.divider{height:1px;background:var(--line);margin:12px 0;}
+.footer-note{text-align:center;color:var(--ink-soft);font-size:11.5px;margin-top:24px;line-height:1.6;}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;}
+canvas{max-width:100%;}
+.modal-bg{
+  position:fixed;inset:0;background:rgba(10,20,15,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;
+}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:18px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.modal h3{margin:0 0 8px;font-size:15px;}
+.modal p{font-size:13px;color:var(--ink-soft);}
+.toast{
+  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;
+  z-index:200;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+.checklist{display:grid;gap:8px;}
+.checklist label.cb{
+  display:flex;align-items:center;gap:9px;font-weight:500;font-size:13.5px;color:var(--ink);
+  background:#fafcfb;border:1px solid var(--line);padding:9px 10px;border-radius:8px;cursor:pointer;
+}
+.checklist input[type=checkbox]{width:17px;height:17px;flex:0 0 auto;}
+.pill-toggle{display:flex;gap:6px;}
+.pill-toggle button{flex:1;padding:7px;border-radius:7px;border:1px solid var(--line);background:#fff;font-size:12.5px;cursor:pointer;font-weight:600;color:var(--ink-soft);}
+.pill-toggle button.active{background:var(--green);color:#fff;border-color:var(--green);}
+.datebar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.datebar input[type=date]{width:auto;flex:0 0 auto;}
+.muted{color:var(--ink-soft);}
+.mini-note{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+.stack{display:flex;flex-direction:column;gap:8px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:560px){.two-col{grid-template-columns:1fr;}}
+.print-only{display:none;}
+@media print{
+  header.app-header, nav.tabs, .btnbar, .no-print, main{display:none !important;}
+  body{padding:0;background:#fff;}
+  .card{box-shadow:none;border:1px solid #999;break-inside:avoid;}
+  .print-only{display:block;max-width:100%;}
+  .print-report table{font-size:12px;}
+  .print-report h3{font-size:13px;margin:16px 0 6px;color:#075038;}
+}
+.settings-list{display:flex;flex-direction:column;gap:6px;}
+.settings-list .item-row{display:flex;gap:8px;align-items:center;}
+.settings-list .item-row input{flex:1;}
+</style>
+</head>
+<body>
+
+<header class="app-header no-print">
+  <div class="row">
+    <div>
+      <h1 id="stationTitle">Station Reconciliation</h1>
+      <div class="sub" id="dateHeaderSub">—</div>
+    </div>
+    <div class="header-actions">
+      <select id="roleSwitch" class="role-switch">
+        <option value="manager">Manager view</option>
+        <option value="director">CEO / Director view</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs no-print" id="tabBar"></nav>
+
+<div class="print-only" id="printHeader" style="padding:14px 12px 0"></div>
+
+<main id="mainContent"></main>
+
+<div class="print-only" id="printReportArea" style="padding:0 12px"></div>
+
+<div class="footer-note no-print">
+  Uties Reconciler — free offline daily reconciliation for fuel stations.<br>
+  Feel free to share this app with other station owners/managers.
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<script>
+/* ============================================================
+   STATION RECONCILIATION — offline-first daily reconciliation app
+   No external libraries. No network calls after first load.
+   All data lives in localStorage on this device only.
+   ============================================================ */
+
+/* ---------- Defaults & constants ---------- */
+
+const STORAGE_KEY = "frs_db_v1";
+const NGN = "₦";
+
+const EXPENSE_CATEGORIES = [
+  "Generator diesel (bought separately from pump stock)",
+  "Security levy / guard wages",
+  "NUPENG / PTD / association dues",
+  "DPR / NMDPRA / local govt levy",
+  "Community / task-force / miscellaneous levy",
+  "Equipment maintenance & repairs",
+  "Transport & logistics",
+  "Bank charges / POS charges",
+  "Consumables (stationery, till rolls, etc)",
+  "Waste disposal / environment",
+  "Miscellaneous"
+];
+
+const SHORTAGE_REASONS = [
+  "Depot/supplier delay",
+  "No fuel allocation from depot",
+  "Truck breakdown in transit",
+  "Road blockade / strike",
+  "Tank temporarily out of stock (sold out)",
+  "Price crash — held back pending new price",
+  "Equipment fault (pump/dispenser down)",
+  "Power outage stopped pump",
+  "Water/contamination found — withdrawn from sale",
+  "Other"
+];
+
+function defaultState() {
+  return {
+    version: 1,
+    stationId: "ST-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    meta: {
+      stationName: "My Fuel Station",
+      address: "",
+      managerName: "",
+      currency: NGN,
+      role: "manager",
+      products: [
+        { id: "pms", name: "PMS (Petrol)", unit: "litres", tankCapacity: 33000, defaultPrice: 0, defaultCost: 0 },
+        { id: "ago", name: "AGO (Diesel)", unit: "litres", tankCapacity: 33000, defaultPrice: 0, defaultCost: 0 },
+        { id: "dpk", name: "DPK (Kerosene)", unit: "litres", tankCapacity: 5000, defaultPrice: 0, defaultCost: 0 },
+        { id: "lpg", name: "Cooking Gas (LPG)", unit: "kg", tankCapacity: 2000, defaultPrice: 0, defaultCost: 0 }
+      ],
+      pumps: [
+        { id: "pump1", name: "Pump 1 / Nozzle A", productId: "pms" },
+        { id: "pump2", name: "Pump 2 / Nozzle B", productId: "pms" },
+        { id: "pump3", name: "Pump 3 / Nozzle C", productId: "ago" }
+      ],
+      staffList: [],
+      avgDailyLitres: {},
+      dipVarianceAlertPct: 1.5,
+      lowStockAlertPct: 20,
+      generatorDieselPrice: 0,
+      alerts: {
+        directorEmail: "",
+        directorPhone: "",
+        channels: { email: false, sms: false, push: false },
+        cashVarianceThreshold: 2000
+      }
+    },
+    days: {},
+    lastBackupAt: null
+  };
+}
+
+let DB = null;
+let currentDate = todayStr();
+let currentTab = "dashboard";
+let editingRefs = {}; // scratch for row editing
+
+/* ---------- Storage ---------- */
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) { DB = defaultState(); saveDB(); return; }
+    const parsed = JSON.parse(raw);
+    DB = Object.assign(defaultState(), parsed);
+    DB.meta = Object.assign(defaultState().meta, parsed.meta || {});
+    DB.days = parsed.days || {};
+  } catch (e) {
+    console.error("Failed to load data, starting fresh.", e);
+    DB = defaultState();
+  }
+}
+
+function saveDB() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  } catch (e) {
+    console.error("Save failed", e);
+    toast("Could not save — device storage may be full.");
+  }
+}
+
+function dayKey(dateStr) {
+  return DB.stationId + "::" + dateStr;
+}
+
+function getDay(dateStr) {
+  const key = dayKey(dateStr);
+  if (!DB.days[key]) {
+    DB.days[key] = blankDay(dateStr);
+  }
+  return DB.days[key];
+}
+
+function blankDay(dateStr) {
+  return {
+    date: dateStr,
+    stationId: DB.stationId,
+    stationName: DB.meta.stationName,
+    manager: DB.meta.managerName,
+    notes: "",
+    fuel: {
+      rows: DB.meta.products.map(p => ({
+        productId: p.id, openingDip: "", closingDip: "", received: "",
+        unitCost: p.defaultCost || "", unitPrice: p.defaultPrice || "",
+        shortageQty: "", shortageNote: ""
+      })),
+      pumps: DB.meta.pumps.map(p => ({
+        pumpId: p.id, productId: p.productId, openingMeter: "", closingMeter: ""
+      }))
+    },
+    generator: {
+      openingHrs: "", closingHrs: "", dieselOpening: "", dieselAdded: "",
+      dieselClosing: "", nepaHoursAvailable: "", purpose: ""
+    },
+    deliveries: [],
+    shortages: [],
+    shop: { items: [] },
+    staff: { attendance: [], payroll: [] },
+    expenses: [],
+    payments: { pos: "", transfer: "", credit: "" },
+    debtors: [],
+    till: { openingFloat: "", cashCounted: "", cashExpensesPaidOut: "", bankedAmount: "", tellerNo: "", bankName: "", depositSlipRef: "" },
+    safety: { fireExtinguisher: false, spillKit: false, noSmokingSignage: false, calibrationSeal: false, waterPasteTest: false, dprPermit: false, ppeAvailable: false, notes: "" },
+    security: []
+  };
+}
+
+/* ---------- Utilities ---------- */
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function uid() { return "id" + Math.random().toString(36).slice(2, 10); }
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function money(v) {
+  const n = num(v);
+  return DB.meta.currency + n.toLocaleString("en-NG", { maximumFractionDigits: 2, minimumFractionDigits: 0 });
+}
+function fmtNum(v, d) {
+  const n = num(v);
+  return n.toLocaleString("en-NG", { maximumFractionDigits: d == null ? 1 : d });
+}
+function productName(id) {
+  const p = DB.meta.products.find(x => x.id === id);
+  return p ? p.name : id;
+}
+function productUnit(id) {
+  const p = DB.meta.products.find(x => x.id === id);
+  return p ? p.unit : "";
+}
+function pumpName(id) {
+  const p = DB.meta.pumps.find(x => x.id === id);
+  return p ? p.name : id;
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function niceDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString("en-NG", { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+}
+function toast(msg, ms) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), ms || 2600);
+}
+function openModal(html) {
+  document.getElementById("modalBox").innerHTML = html;
+  document.getElementById("modalBg").classList.add("open");
+}
+function closeModal() {
+  document.getElementById("modalBg").classList.remove("open");
+}
+document.addEventListener("click", (e) => {
+  if (e.target.id === "modalBg") closeModal();
+});
+
+/* ---------- Director alerts (email / SMS / push via Netlify Functions) ----------
+   Everything here is best-effort: if the app isn't hosted (e.g. running the
+   standalone single-file version, or opened straight from a folder with no
+   backend), these fetch calls simply fail silently and the day's data is
+   still saved locally as always. Nothing about the offline-first design
+   changes — this is a bonus notification on top of it, sent only when the
+   manager's device happens to have a connection at that moment. */
+
+const VAPID_PUBLIC_KEY = "BMzeQ_VD9_9R4YxTHJqHcPHUP9muQD92LRaPEhAhnolUMEvCdX26py6MxamMzYWgYqV78EOq5GeY3bTi7QK13oo";
+
+function sendAlert(eventType, subject, message) {
+  const a = DB.meta.alerts || {};
+  const ch = a.channels || {};
+  if (!ch.email && !ch.sms && !ch.push) return;
+  if (!a.directorEmail && !a.directorPhone) return;
+  fetch("/api/notify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      directorEmail: a.directorEmail, directorPhone: a.directorPhone,
+      channels: ch, stationName: DB.meta.stationName,
+      eventType, subject, message
+    })
+  }).catch(() => { /* offline, or app not hosted with functions yet — ignore */ });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function enablePushOnThisDevice() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    toast("This browser doesn't support push notifications.");
+    return;
+  }
+  if (!DB.meta.alerts.directorEmail) {
+    toast("Enter the Director's email above first — push devices are linked by that email.");
+    return;
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { toast("Notification permission was not granted."); return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ directorEmail: DB.meta.alerts.directorEmail, subscription: sub })
+    });
+    if (!res.ok) throw new Error("Server rejected registration");
+    toast("Push notifications enabled on this device.");
+  } catch (e) {
+    console.error(e);
+    toast("Couldn't enable push here — this app may not be hosted yet, or the browser blocked it.");
+  }
+}
+
+async function sendTestAlert() {
+  const a = DB.meta.alerts;
+  if (!a.channels.email && !a.channels.sms && !a.channels.push) { toast("Turn on at least one channel first."); return; }
+  try {
+    const res = await fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        directorEmail: a.directorEmail, directorPhone: a.directorPhone, channels: a.channels,
+        stationName: DB.meta.stationName, eventType: "test",
+        subject: `Test alert from ${DB.meta.stationName}`,
+        message: `This is a test alert from ${DB.meta.stationName} via Uties Reconciler. If you received this, notifications are working.`
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast("Test failed — is the app hosted with functions live yet?"); return; }
+    openModal(`<h3>Test alert sent</h3><p>Result per channel:</p><pre style="white-space:pre-wrap;font-size:12px;background:#f4f7f5;padding:10px;border-radius:6px">${esc(JSON.stringify(data.results, null, 2))}</pre><div class="btnbar"><button class="btn" id="closeTestModal">Close</button></div>`);
+    document.getElementById("closeTestModal").addEventListener("click", closeModal);
+  } catch (e) {
+    toast("Couldn't reach the alert service — app may not be hosted yet.");
+  }
+}
+
+/* Trigger hooks — each dedupes with a flag on the record itself, so
+   editing the same field repeatedly (or re-rendering) doesn't spam the
+   Director with repeat alerts for the same underlying event. */
+
+function maybeNotifyLowStock(day, rowIndex) {
+  const row = day.fuel.rows[rowIndex];
+  const product = DB.meta.products.find(p => p.id === row.productId);
+  if (!product || !product.tankCapacity) return;
+  const pct = (num(row.closingDip) / product.tankCapacity) * 100;
+  const threshold = DB.meta.lowStockAlertPct || 20;
+  if (num(row.closingDip) > 0 && pct <= threshold) {
+    if (!row._lowStockNotified) {
+      row._lowStockNotified = true;
+      saveDB();
+      sendAlert("lowstock",
+        `Low stock: ${productName(row.productId)} — ${DB.meta.stationName}`,
+        `${productName(row.productId)} at ${DB.meta.stationName} is down to ${pct.toFixed(0)}% of tank capacity (${fmtNum(row.closingDip)} ${productUnit(row.productId)} left) as of ${niceDate(day.date)}. Consider arranging a delivery.`
+      );
+    }
+  } else if (row._lowStockNotified) {
+    row._lowStockNotified = false; // restocked above threshold — allow a fresh alert if it drops again later
+    saveDB();
+  }
+}
+
+function maybeNotifyShortage(day, rowIndex) {
+  const s = day.shortages[rowIndex];
+  if (!s || s.notified || !s.productId) return;
+  s.notified = true;
+  saveDB();
+  sendAlert("shortage",
+    `Shortage: ${productName(s.productId)} — ${DB.meta.stationName}`,
+    `${productName(s.productId)} shortage logged at ${DB.meta.stationName} on ${niceDate(day.date)}. Reason: ${s.reason || "not specified yet"}. Started: ${s.startTime || "—"}.${s.customersTurnedAway ? " Customers turned away so far: " + s.customersTurnedAway + "." : ""}`
+  );
+}
+
+function maybeNotifyVariance(day) {
+  const c = computeDay(day);
+  const threshold = num(DB.meta.alerts.cashVarianceThreshold || 2000);
+  if (Math.abs(c.cashVariance) >= threshold) {
+    if (!day.till._varianceNotified) {
+      day.till._varianceNotified = true;
+      saveDB();
+      sendAlert("variance",
+        `Cash variance: ${DB.meta.stationName}`,
+        `Cash till at ${DB.meta.stationName} is ${c.cashVariance < 0 ? "short" : "over"} by ${money(Math.abs(c.cashVariance))} versus expected cash, as of ${niceDate(day.date)}.`
+      );
+    }
+  } else if (day.till._varianceNotified) {
+    day.till._varianceNotified = false;
+    saveDB();
+  }
+}
+
+function sendDaySummary(day) {
+  const c = computeDay(day);
+  const lines = [
+    `Daily summary for ${DB.meta.stationName} — ${niceDate(day.date)}`,
+    `Revenue: ${money(c.totalRevenue)} (Fuel ${money(c.fuelRevenue)}, Shop ${money(c.shopRevenue)})`,
+    `Net profit (est.): ${money(c.netProfit)}`,
+    `Cash variance: ${money(c.cashVariance)}`,
+    c.openShortages.length ? `Open shortages: ${c.openShortages.length} (est. ${money(c.totalEstLostRevenue)} lost)` : `No open shortages.`,
+    c.totalDebtorsBalance > 0 ? `Owed by credit customers: ${money(c.totalDebtorsBalance)}` : null
+  ].filter(Boolean);
+  sendAlert("summary", `Day summary: ${DB.meta.stationName} — ${niceDate(day.date)}`, lines.join("\n"));
+  day._summarySentAt = new Date().toISOString();
+  saveDB();
+  toast("Day summary sent to Director.");
+}
+
+/* ---------- Computations (per-day derived numbers) ---------- */
+
+function computeDay(day) {
+  const c = {};
+
+  // Fuel: meter-based litres sold per pump, aggregated per product
+  c.meterSoldByProduct = {};
+  (day.fuel.pumps || []).forEach(pp => {
+    const sold = Math.max(0, num(pp.closingMeter) - num(pp.openingMeter));
+    c.meterSoldByProduct[pp.productId] = (c.meterSoldByProduct[pp.productId] || 0) + sold;
+  });
+
+  c.fuelRows = (day.fuel.rows || []).map(r => {
+    const opening = num(r.openingDip), closing = num(r.closingDip), received = num(r.received);
+    const dipSold = opening + received - closing;
+    const meterSold = c.meterSoldByProduct[r.productId] || 0;
+    const variance = dipSold - meterSold;
+    const basisForRevenue = meterSold > 0 ? meterSold : Math.max(0, dipSold);
+    const revenue = basisForRevenue * num(r.unitPrice);
+    const cost = basisForRevenue * num(r.unitCost);
+    const profit = revenue - cost;
+    const variancePct = meterSold > 0 ? (variance / meterSold) * 100 : 0;
+    const product = DB.meta.products.find(p => p.id === r.productId) || {};
+    const closingPct = product.tankCapacity ? (closing / product.tankCapacity) * 100 : null;
+    return {
+      ...r, opening, closing, received, dipSold, meterSold, variance, variancePct,
+      revenue, cost, profit, closingPct, shortageQty: num(r.shortageQty)
+    };
+  });
+
+  c.fuelRevenue = c.fuelRows.reduce((s, r) => s + r.revenue, 0);
+  c.fuelCost = c.fuelRows.reduce((s, r) => s + r.cost, 0);
+  c.fuelProfit = c.fuelRows.reduce((s, r) => s + r.profit, 0);
+  c.fuelVarianceFlags = c.fuelRows.filter(r => Math.abs(r.variancePct) >= (DB.meta.dipVarianceAlertPct || 1.5) && r.meterSold > 0);
+  c.lowStockFlags = c.fuelRows.filter(r => r.closingPct != null && r.closingPct <= (DB.meta.lowStockAlertPct || 20));
+
+  // Generator
+  const g = day.generator || {};
+  c.generatorLitresUsed = Math.max(0, num(g.dieselOpening) + num(g.dieselAdded) - num(g.dieselClosing));
+  c.generatorHoursRun = Math.max(0, num(g.closingHrs) - num(g.openingHrs));
+  c.generatorCost = c.generatorLitresUsed * num(DB.meta.generatorDieselPrice || 0);
+
+  // Deliveries
+  c.deliveries = (day.deliveries || []).map(d => {
+    const discrepancy = num(d.qtyOrdered) - num(d.qtyReceived);
+    return { ...d, discrepancy };
+  });
+  c.totalDelivered = c.deliveries.reduce((s, d) => s + num(d.qtyReceived), 0);
+  c.deliveryDiscrepancies = c.deliveries.filter(d => Math.abs(d.discrepancy) > 0);
+
+  // Shortages
+  c.shortages = (day.shortages || []);
+  c.openShortages = c.shortages.filter(s => s.status !== "resolved");
+  c.totalEstLostRevenue = c.shortages.reduce((s, x) => s + num(x.estLostRevenue), 0);
+  c.totalCustomersTurnedAway = c.shortages.reduce((s, x) => s + num(x.customersTurnedAway), 0);
+
+  // Shop
+  c.shopRows = (day.shop.items || []).map(it => {
+    const sales = num(it.salesAmount), cogs = num(it.costOfGoods), spoil = num(it.spoilage);
+    return { ...it, sales, cogs, spoil, profit: sales - cogs - spoil };
+  });
+  c.shopRevenue = c.shopRows.reduce((s, r) => s + r.sales, 0);
+  c.shopProfit = c.shopRows.reduce((s, r) => s + r.profit, 0);
+  c.shopSpoilage = c.shopRows.reduce((s, r) => s + r.spoil, 0);
+
+  // Staff / payroll
+  c.payrollTotal = (day.staff.payroll || []).reduce((s, p) => s + Math.max(0, num(p.baseAmount) - num(p.advance) - num(p.deduction)), 0);
+  c.presentCount = (day.staff.attendance || []).filter(a => a.present !== false).length;
+  c.absentCount = (day.staff.attendance || []).filter(a => a.present === false).length;
+
+  // Expenses
+  c.expensesTotal = (day.expenses || []).reduce((s, e) => s + num(e.amount), 0);
+
+  // Payments split
+  const pos = num(day.payments.pos), transfer = num(day.payments.transfer), credit = num(day.payments.credit);
+  c.totalRevenue = c.fuelRevenue + c.shopRevenue;
+  c.cashSalesExpected = Math.max(0, c.totalRevenue - pos - transfer - credit);
+  c.posAmt = pos; c.transferAmt = transfer; c.creditAmt = credit;
+
+  // Debtors
+  c.debtorRows = (day.debtors || []).map(d => {
+    const balance = num(d.previousBalance) + num(d.newCredit) - num(d.amountPaid);
+    return { ...d, balance };
+  });
+  c.totalDebtorsBalance = c.debtorRows.reduce((s, d) => s + d.balance, 0);
+
+  // Till
+  const t = day.till || {};
+  c.expectedCash = num(t.openingFloat) + c.cashSalesExpected - num(t.cashExpensesPaidOut);
+  c.cashVariance = num(t.cashCounted) - c.expectedCash;
+
+  // Totals
+  c.totalCostOfGoods = c.fuelCost + c.shopRows.reduce((s, r) => s + r.cogs, 0);
+  c.grossProfit = c.totalRevenue - c.totalCostOfGoods;
+  c.netProfit = c.grossProfit - c.expensesTotal - c.payrollTotal - c.generatorCost - c.shopSpoilage;
+
+  // Safety score
+  const s = day.safety || {};
+  const safetyKeys = ["fireExtinguisher", "spillKit", "noSmokingSignage", "calibrationSeal", "waterPasteTest", "dprPermit", "ppeAvailable"];
+  c.safetyChecked = safetyKeys.filter(k => s[k]).length;
+  c.safetyTotal = safetyKeys.length;
+
+  c.securityLossTotal = (day.security || []).reduce((s2, x) => s2 + num(x.lossAmount), 0);
+
+  return c;
+}
+
+function allDaysSorted(stationFilter) {
+  return Object.values(DB.days)
+    .filter(d => !stationFilter || d.stationId === stationFilter)
+    .sort((a, b) => a.date < b.date ? 1 : -1);
+}
+
+/* Compact "Pump A: 120→3900 (3780L)" summary of every pump's starting and
+   closing sales meter reading for a day — reused by the History tab, the
+   CSV export, and the printed daily report so the raw meter numbers are
+   never buried behind the Fuel & Tanks tab alone. */
+function formatMeterSummary(day, sep) {
+  const pumps = (day.fuel && day.fuel.pumps) || [];
+  if (!pumps.length) return "";
+  return pumps.map(p => {
+    const open = num(p.openingMeter), close = num(p.closingMeter);
+    const sold = Math.max(0, close - open);
+    const label = pumpName(p.pumpId) || p.pumpId;
+    return `${label}: ${fmtNum(open)}→${fmtNum(close)} (${fmtNum(sold)}L)`;
+  }).join(sep || " · ");
+}
+
+function stationList() {
+  const seen = {};
+  Object.values(DB.days).forEach(d => { seen[d.stationId] = d.stationName || d.stationId; });
+  if (!seen[DB.stationId]) seen[DB.stationId] = DB.meta.stationName;
+  return Object.entries(seen).map(([id, name]) => ({ id, name }));
+}
+
+/* ---------- Tab framework ---------- */
+
+const MANAGER_TABS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "fuel", label: "Fuel & Tanks" },
+  { id: "deliveries", label: "Deliveries" },
+  { id: "shortages", label: "Shortages" },
+  { id: "generator", label: "Generator & Power" },
+  { id: "shop", label: "Shop & Restaurant" },
+  { id: "staff", label: "Staff & Salary" },
+  { id: "expenses", label: "Expenses" },
+  { id: "payments", label: "Payments & Debtors" },
+  { id: "till", label: "Till & Bank" },
+  { id: "safety", label: "Safety & Security" },
+  { id: "history", label: "History" },
+  { id: "settings", label: "Settings & Data" }
+];
+const DIRECTOR_TABS = [
+  { id: "dashboard", label: "Overview" },
+  { id: "history", label: "All Records" },
+  { id: "settings", label: "Settings & Data" }
+];
+
+function renderTabs() {
+  const tabs = DB.meta.role === "director" ? DIRECTOR_TABS : MANAGER_TABS;
+  if (!tabs.find(t => t.id === currentTab)) currentTab = "dashboard";
+  const bar = document.getElementById("tabBar");
+  bar.innerHTML = tabs.map(t =>
+    `<button data-tab="${t.id}" class="${t.id === currentTab ? "active" : ""}">${esc(t.label)}</button>`
+  ).join("");
+  bar.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    currentTab = b.dataset.tab;
+    renderAll();
+  }));
+}
+
+function renderHeader() {
+  const BRAND = "Uties Reconciler";
+  document.getElementById("stationTitle").textContent = DB.meta.stationName || "Station Reconciliation";
+  const sub = DB.meta.role === "director"
+    ? BRAND + " · CEO / Director dashboard — combined view of imported records"
+    : BRAND + " · " + (DB.meta.managerName ? DB.meta.managerName + " · " : "") + niceDate(currentDate);
+  document.getElementById("dateHeaderSub").textContent = sub;
+  document.getElementById("roleSwitch").value = DB.meta.role;
+  const ph = document.getElementById("printHeader");
+  if (ph) {
+    ph.innerHTML = `<h2 style="margin:0">${esc(DB.meta.stationName)}</h2>
+      <div style="font-size:12px;color:#555">${esc(DB.meta.address || "")}</div>
+      <div style="font-size:13px;margin-top:4px">Report date: <b>${niceDate(currentDate)}</b> &nbsp;|&nbsp; Manager: ${esc(DB.meta.managerName || "—")} &nbsp;|&nbsp; Printed: ${new Date().toLocaleString("en-NG")}</div>
+      <hr style="margin:10px 0;border:none;border-top:1px solid #999">`;
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  renderTabs();
+  const main = document.getElementById("mainContent");
+  const fn = VIEW_RENDERERS[currentTab] || VIEW_RENDERERS.dashboard;
+  main.innerHTML = "";
+  main.appendChild(fn());
+  saveDB();
+}
+
+function el(html) {
+  const d = document.createElement("div");
+  d.innerHTML = html.trim();
+  return d.firstElementChild || d;
+}
+
+/* ---------- Tiny canvas chart helpers (no external libs) ---------- */
+
+function drawBarChart(canvas, labels, values, opts) {
+  opts = opts || {};
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 300, h = canvas.clientHeight || 160;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  const max = Math.max(1, ...values.map(v => Math.abs(v)));
+  const padL = 8, padR = 8, padT = 10, padB = 22;
+  const chartW = w - padL - padR, chartH = h - padT - padB;
+  const barW = chartW / values.length * 0.6;
+  const gap = chartW / values.length;
+  ctx.font = "10px sans-serif";
+  values.forEach((v, i) => {
+    const bh = (Math.abs(v) / max) * (chartH - 4);
+    const x = padL + i * gap + (gap - barW) / 2;
+    const y = padT + (chartH - bh);
+    ctx.fillStyle = opts.color || "#0b6e4f";
+    if (v < 0) ctx.fillStyle = "#b3261e";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, barW, bh, 3); else ctx.rect(x, y, barW, bh);
+    ctx.fill();
+    ctx.fillStyle = "#5b6b64";
+    ctx.textAlign = "center";
+    ctx.fillText(labels[i] != null ? String(labels[i]) : "", x + barW / 2, h - 8);
+  });
+  if (!values.length) {
+    ctx.fillStyle = "#9aa8a2"; ctx.textAlign = "center";
+    ctx.fillText("No data yet", w / 2, h / 2);
+  }
+}
+
+function drawLineChart(canvas, values, opts) {
+  opts = opts || {};
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 300, h = canvas.clientHeight || 140;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  if (!values.length) {
+    ctx.fillStyle = "#9aa8a2"; ctx.textAlign = "center"; ctx.font = "12px sans-serif";
+    ctx.fillText("No data yet", w / 2, h / 2);
+    return;
+  }
+  const max = Math.max(...values, 0), min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const padL = 6, padR = 6, padT = 10, padB = 10;
+  const chartW = w - padL - padR, chartH = h - padT - padB;
+  const stepX = values.length > 1 ? chartW / (values.length - 1) : 0;
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = padL + i * stepX;
+    const y = padT + chartH - ((v - min) / range) * chartH;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = opts.color || "#0b6e4f";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // fill
+  ctx.lineTo(padL + (values.length - 1) * stepX, padT + chartH);
+  ctx.lineTo(padL, padT + chartH);
+  ctx.closePath();
+  ctx.fillStyle = (opts.color || "#0b6e4f") + "22";
+  ctx.fill();
+  // dots
+  values.forEach((v, i) => {
+    const x = padL + i * stepX;
+    const y = padT + chartH - ((v - min) / range) * chartH;
+    ctx.beginPath(); ctx.arc(x, y, 2.5, 0, 7); ctx.fillStyle = opts.color || "#0b6e4f"; ctx.fill();
+  });
+}
+
+function drawDonut(canvas, segments) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 160, h = canvas.clientHeight || 160;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  const total = segments.reduce((s, x) => s + Math.max(0, x.value), 0);
+  const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
+  if (total <= 0) {
+    ctx.fillStyle = "#e5ebe8"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill();
+    ctx.fillStyle = "#9aa8a2"; ctx.textAlign = "center"; ctx.font = "11px sans-serif";
+    ctx.fillText("No data", cx, cy + 4);
+    return;
+  }
+  let start = -Math.PI / 2;
+  segments.forEach(seg => {
+    const angle = (Math.max(0, seg.value) / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    start += angle;
+  });
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.58, 0, 7); ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ---------- VIEW RENDERERS ---------- */
+const VIEW_RENDERERS = {};
+
+/* ---- Dashboard (Manager) ---- */
+VIEW_RENDERERS.dashboard = function () {
+  if (DB.meta.role === "director") return renderDirectorDashboard();
+  const day = getDay(currentDate);
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+
+  wrap.appendChild(el(dateBarHtml()));
+
+  const alerts = [];
+  c.fuelVarianceFlags.forEach(r => alerts.push({
+    level: "bad",
+    text: `${productName(r.productId)}: dip vs meter variance of ${fmtNum(r.variance)} ${productUnit(r.productId)} (${r.variancePct.toFixed(1)}%). Check for leakage, theft, or meter fault.`
+  }));
+  c.lowStockFlags.forEach(r => alerts.push({
+    level: "warn",
+    text: `${productName(r.productId)} tank is at ${r.closingPct.toFixed(0)}% of capacity — plan a reorder before it runs out.`
+  }));
+  if (Math.abs(c.cashVariance) > 500) alerts.push({
+    level: c.cashVariance < 0 ? "bad" : "warn",
+    text: `Cash till is ${c.cashVariance < 0 ? "short" : "over"} by ${money(Math.abs(c.cashVariance))} versus expected cash.`
+  });
+  c.openShortages.forEach(s => alerts.push({
+    level: "bad",
+    text: `${productName(s.productId)} shortage still open since ${s.startTime || "—"} — est. ${money(s.estLostRevenue)} lost so far.`
+  }));
+  c.deliveryDiscrepancies.forEach(d => alerts.push({
+    level: "warn",
+    text: `Delivery of ${productName(d.productId)} from ${d.supplier || "supplier"}: ordered ${fmtNum(d.qtyOrdered)} but received ${fmtNum(d.qtyReceived)} (short by ${fmtNum(d.discrepancy)}).`
+  }));
+  if (c.safetyChecked < c.safetyTotal) alerts.push({
+    level: "warn", text: `Safety checklist incomplete: ${c.safetyChecked}/${c.safetyTotal} items checked today.`
+  });
+  if (c.totalDebtorsBalance > 0) alerts.push({
+    level: "warn", text: `${money(c.totalDebtorsBalance)} owed by credit customers as of today — follow up on collections.`
+  });
+
+  if (alerts.length) {
+    const box = el(`<div class="card"><h2>⚠ Attention needed <span class="badge">${alerts.length}</span></h2></div>`);
+    alerts.forEach(a => box.appendChild(el(`<div class="alert ${a.level}">${a.text}</div>`)));
+    wrap.appendChild(box);
+  } else {
+    wrap.appendChild(el(`<div class="alert ok">All good — no variances, low-stock warnings, or open shortages for today.</div>`));
+  }
+
+  wrap.appendChild(el(`
+    <div class="kpis">
+      <div class="kpi"><div class="label">Total revenue</div><div class="value">${money(c.totalRevenue)}</div><div class="sub">Fuel ${money(c.fuelRevenue)} · Shop ${money(c.shopRevenue)}</div></div>
+      <div class="kpi"><div class="label">Net profit (est.)</div><div class="value ${c.netProfit >= 0 ? 'pos' : 'neg'}">${money(c.netProfit)}</div><div class="sub">After COGS, salary, expenses, gen. diesel</div></div>
+      <div class="kpi"><div class="label">Cash variance</div><div class="value ${c.cashVariance === 0 ? '' : (c.cashVariance < 0 ? 'neg' : 'pos')}">${money(c.cashVariance)}</div><div class="sub">Counted vs expected in till</div></div>
+      <div class="kpi"><div class="label">Lost sales (shortages)</div><div class="value neg">${money(c.totalEstLostRevenue)}</div><div class="sub">${c.totalCustomersTurnedAway} customers turned away</div></div>
+    </div>
+  `));
+
+  const chartsCard = el(`<div class="card"><h2>Revenue by product</h2><div class="two-col"><div><canvas id="chFuel" style="width:100%;height:150px"></canvas></div><div style="display:flex;align-items:center;justify-content:center"><canvas id="chDonut" width="150" height="150" style="width:150px;height:150px"></canvas></div></div></div>`);
+  wrap.appendChild(chartsCard);
+
+  const trend = last7DaysTotals(DB.stationId);
+  wrap.appendChild(el(`<div class="card"><h2>Revenue trend — last 7 recorded days</h2><canvas id="chTrend" style="width:100%;height:130px"></canvas></div>`));
+
+  wrap.appendChild(el(`
+    <div class="card">
+      <h2>Payment mix today</h2>
+      <div class="grid cols-4">
+        <div><label>Cash (expected)</label><div>${money(c.cashSalesExpected)}</div></div>
+        <div><label>POS</label><div>${money(c.posAmt)}</div></div>
+        <div><label>Transfer</label><div>${money(c.transferAmt)}</div></div>
+        <div><label>Credit / signature</label><div>${money(c.creditAmt)}</div></div>
+      </div>
+    </div>
+  `));
+
+  const summaryCard = el(`<div class="card no-print">
+    <h2>Director summary</h2>
+    <p class="hint">Sends today's totals to whichever channels are enabled in Settings &amp; Data &gt; Director Alerts.</p>
+    <div class="btnbar"><button class="btn" id="sendSummaryBtn">📤 Send day summary to Director</button></div>
+    ${day._summarySentAt ? `<div class="mini-note">Last sent: ${new Date(day._summarySentAt).toLocaleString("en-NG")}</div>` : ""}
+  </div>`);
+  summaryCard.querySelector("#sendSummaryBtn").addEventListener("click", () => { sendDaySummary(day); renderAll(); });
+  wrap.appendChild(summaryCard);
+
+  setTimeout(() => {
+    drawBarChart(document.getElementById("chFuel"),
+      c.fuelRows.map(r => r.productId.toUpperCase()),
+      c.fuelRows.map(r => r.revenue));
+    drawDonut(document.getElementById("chDonut"), [
+      { value: c.fuelRevenue, color: "#0b6e4f" },
+      { value: c.shopRevenue, color: "#b8860b" }
+    ]);
+    drawLineChart(document.getElementById("chTrend"), trend.values, { color: "#0b6e4f" });
+  }, 0);
+
+  return wrap;
+};
+
+function last7DaysTotals(stationId) {
+  const days = allDaysSorted(stationId).slice(0, 7).reverse();
+  return {
+    labels: days.map(d => d.date.slice(5)),
+    values: days.map(d => computeDay(d).totalRevenue)
+  };
+}
+
+function renderDirectorDashboard() {
+  const wrap = el(`<div></div>`);
+  const stations = stationList();
+  const allDays = Object.values(DB.days);
+  const totalsByStation = stations.map(s => {
+    const days = allDays.filter(d => d.stationId === s.id);
+    const sums = days.reduce((acc, d) => {
+      const c = computeDay(d);
+      acc.revenue += c.totalRevenue; acc.profit += c.netProfit; acc.variance += c.cashVariance;
+      acc.lost += c.totalEstLostRevenue; acc.days += 1;
+      return acc;
+    }, { revenue: 0, profit: 0, variance: 0, lost: 0, days: 0 });
+    return { ...s, ...sums, lastDate: days.map(d => d.date).sort().pop() };
+  });
+
+  wrap.appendChild(el(`
+    <div class="card">
+      <h2>Combined overview <span class="badge">${stations.length} station${stations.length === 1 ? "" : "s"}</span></h2>
+      <p class="hint">Numbers below combine every daily record currently imported into this device. Import each manager's exported .json file from Settings &amp; Data to bring their numbers in here.</p>
+    </div>
+  `));
+
+  const grand = totalsByStation.reduce((a, s) => ({
+    revenue: a.revenue + s.revenue, profit: a.profit + s.profit,
+    variance: a.variance + s.variance, lost: a.lost + s.lost
+  }), { revenue: 0, profit: 0, variance: 0, lost: 0 });
+
+  wrap.appendChild(el(`
+    <div class="kpis">
+      <div class="kpi"><div class="label">Total revenue (all time, all stations)</div><div class="value">${money(grand.revenue)}</div></div>
+      <div class="kpi"><div class="label">Total net profit (est.)</div><div class="value ${grand.profit >= 0 ? 'pos' : 'neg'}">${money(grand.profit)}</div></div>
+      <div class="kpi"><div class="label">Cumulative cash variance</div><div class="value ${grand.variance < 0 ? 'neg' : ''}">${money(grand.variance)}</div></div>
+      <div class="kpi"><div class="label">Total lost sales (shortages)</div><div class="value neg">${money(grand.lost)}</div></div>
+    </div>
+  `));
+
+  const tableCard = el(`<div class="card"><h2>Per-station summary</h2><div class="tablewrap"><table>
+    <thead><tr><th>Station</th><th>Days recorded</th><th>Last entry</th><th class="right">Revenue</th><th class="right">Net profit</th><th class="right">Cash variance</th><th class="right">Lost sales</th></tr></thead>
+    <tbody>${totalsByStation.map(s => `
+      <tr>
+        <td>${esc(s.name)}${s.id === DB.stationId ? ' <span class="tag ok">this device</span>' : ""}</td>
+        <td class="center">${s.days}</td>
+        <td>${s.lastDate ? niceDate(s.lastDate) : "—"}</td>
+        <td class="right num">${money(s.revenue)}</td>
+        <td class="right num">${money(s.profit)}</td>
+        <td class="right num" style="color:${s.variance < 0 ? 'var(--red)' : 'inherit'}">${money(s.variance)}</td>
+        <td class="right num" style="color:var(--red)">${money(s.lost)}</td>
+      </tr>`).join("") || `<tr><td colspan="7" class="empty">No records yet. Import a manager's export file from Settings &amp; Data.</td></tr>`}
+    </tbody></table></div></div>`);
+  wrap.appendChild(tableCard);
+
+  return wrap;
+}
+
+function dateBarHtml() {
+  return `<div class="datebar no-print">
+    <input type="date" id="datePicker" value="${currentDate}">
+    <button class="btn secondary small" id="prevDayBtn">‹ Prev day</button>
+    <button class="btn secondary small" id="todayBtn">Today</button>
+    <button class="btn secondary small" id="nextDayBtn">Next day ›</button>
+    <button class="btn ghost small" id="printBtn" style="margin-left:auto">🖨 Print day report</button>
+  </div>`;
+}
+
+function wireDateBar(container) {
+  const dp = container.querySelector("#datePicker");
+  if (!dp) return;
+  dp.addEventListener("change", () => { currentDate = dp.value; renderAll(); });
+  const shift = (n) => { const d = new Date(currentDate + "T00:00:00"); d.setDate(d.getDate() + n); currentDate = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); renderAll(); };
+  container.querySelector("#prevDayBtn").addEventListener("click", () => shift(-1));
+  container.querySelector("#nextDayBtn").addEventListener("click", () => shift(1));
+  container.querySelector("#todayBtn").addEventListener("click", () => { currentDate = todayStr(); renderAll(); });
+  container.querySelector("#printBtn").addEventListener("click", () => {
+    renderPrintReport(getDay(currentDate));
+    window.print();
+  });
+}
+
+/* Builds a complete, self-contained daily report into #printReportArea —
+   independent of whichever tab happens to be on screen, so printing from
+   the Dashboard (or anywhere else) always includes the full picture:
+   tank dip readings, every pump's starting/closing sales meter and
+   litres sold, generator, deliveries, shortages, till, and safety. */
+function renderPrintReport(day) {
+  const area = document.getElementById("printReportArea");
+  if (!area) return;
+  const c = computeDay(day);
+
+  const fuelRows = c.fuelRows.map(r => `
+    <tr>
+      <td>${esc(productName(r.productId))}</td>
+      <td class="right">${fmtNum(r.opening)}</td>
+      <td class="right">${fmtNum(r.received)}</td>
+      <td class="right">${fmtNum(r.closing)}</td>
+      <td class="right">${fmtNum(r.dipSold)}</td>
+      <td class="right">${fmtNum(r.meterSold)}</td>
+      <td class="right">${money(r.unitPrice)}</td>
+      <td class="right">${money(r.revenue)}</td>
+    </tr>`).join("") || `<tr><td colspan="8">No fuel data entered.</td></tr>`;
+
+  const pumpRows = (day.fuel.pumps || []).map(p => {
+    const sold = Math.max(0, num(p.closingMeter) - num(p.openingMeter));
+    return `<tr>
+      <td>${esc(pumpName(p.pumpId))}</td>
+      <td>${esc(productName(p.productId))}</td>
+      <td class="right">${fmtNum(p.openingMeter)}</td>
+      <td class="right">${fmtNum(p.closingMeter)}</td>
+      <td class="right">${fmtNum(sold)}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5">No pumps configured.</td></tr>`;
+
+  const deliveryRows = (day.deliveries || []).map(d => `
+    <tr><td>${esc(productName(d.productId))}</td><td>${esc(d.supplier)}</td><td>${esc(d.truckNo)}</td>
+      <td class="right">${fmtNum(d.qtyOrdered)}</td><td class="right">${fmtNum(d.qtyReceived)}</td></tr>`).join("");
+
+  const shortageRows = (day.shortages || []).map(s => `
+    <tr><td>${esc(productName(s.productId))}</td><td>${esc(s.status)}</td><td>${esc(s.reason)}</td>
+      <td class="right">${money(s.estLostRevenue)}</td></tr>`).join("");
+
+  area.innerHTML = `
+    <div class="print-report">
+      <h3>Fuel — tank dip vs pump meter</h3>
+      <table><thead><tr><th>Product</th><th class="right">Opening dip</th><th class="right">Received</th><th class="right">Closing dip</th><th class="right">Sold (dip)</th><th class="right">Sold (meter)</th><th class="right">Price</th><th class="right">Revenue</th></tr></thead>
+      <tbody>${fuelRows}</tbody></table>
+
+      <h3>Pump meters — starting &amp; closing sales meter readings</h3>
+      <table><thead><tr><th>Pump</th><th>Product</th><th class="right">Opening meter</th><th class="right">Closing meter</th><th class="right">Litres sold</th></tr></thead>
+      <tbody>${pumpRows}</tbody></table>
+
+      ${deliveryRows ? `<h3>Deliveries</h3><table><thead><tr><th>Product</th><th>Supplier</th><th>Truck</th><th class="right">Ordered</th><th class="right">Received</th></tr></thead><tbody>${deliveryRows}</tbody></table>` : ""}
+
+      ${shortageRows ? `<h3>Shortages</h3><table><thead><tr><th>Product</th><th>Status</th><th>Reason</th><th class="right">Est. lost revenue</th></tr></thead><tbody>${shortageRows}</tbody></table>` : ""}
+
+      <h3>Generator</h3>
+      <table><tbody>
+        <tr><td>Diesel used</td><td class="right">${fmtNum(c.generatorLitresUsed)} L (${money(c.generatorCost)})</td></tr>
+        <tr><td>Hours run</td><td class="right">${fmtNum(c.generatorHoursRun)}</td></tr>
+        <tr><td>NEPA/grid hours available</td><td class="right">${esc(day.generator.nepaHoursAvailable || "—")}</td></tr>
+      </tbody></table>
+
+      <h3>Till &amp; summary</h3>
+      <table><tbody>
+        <tr><td>Total revenue</td><td class="right">${money(c.totalRevenue)}</td></tr>
+        <tr><td>Net profit (est.)</td><td class="right">${money(c.netProfit)}</td></tr>
+        <tr><td>Cash counted</td><td class="right">${money(day.till.cashCounted)}</td></tr>
+        <tr><td>Cash variance</td><td class="right">${money(c.cashVariance)}</td></tr>
+        <tr><td>Safety checklist</td><td class="right">${c.safetyChecked}/${c.safetyTotal} items checked</td></tr>
+      </tbody></table>
+
+      ${day.notes ? `<h3>Notes</h3><p>${esc(day.notes)}</p>` : ""}
+    </div>
+  `;
+}
+
+/* ---- Fuel & Tanks ---- */
+VIEW_RENDERERS.fuel = function () {
+  const day = getDay(currentDate);
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const tankCard = el(`<div class="card">
+    <h2>Tank dip readings &amp; pricing</h2>
+    <p class="hint">Dip = physical stick reading in litres. "Sold (by dip)" is calculated as Opening + Received − Closing, and is compared against what the pump meters recorded, to catch leakage, theft, or a faulty meter early. The <b>Shortage</b> column flags any product that ran out or was pulled from sale today.</p>
+    <div class="tablewrap"><table class="tight">
+      <thead><tr>
+        <th>Product</th><th class="right">Opening dip</th><th class="right">Received</th><th class="right">Closing dip</th>
+        <th class="right">Sold (dip)</th><th class="right">Sold (meter)</th><th class="right">Variance</th>
+        <th class="right">Price/unit</th><th class="right">Cost/unit</th><th class="right">Revenue</th>
+        <th class="right">Tank %</th><th>Shortage</th>
+      </tr></thead>
+      <tbody>
+      ${c.fuelRows.map((r, i) => `
+        <tr>
+          <td>${esc(productName(r.productId))}<div class="mini-note">${esc(productUnit(r.productId))}</div></td>
+          <td><input type="number" step="any" data-f="openingDip" data-i="${i}" value="${esc(day.fuel.rows[i].openingDip)}"></td>
+          <td><input type="number" step="any" data-f="received" data-i="${i}" value="${esc(day.fuel.rows[i].received)}"></td>
+          <td><input type="number" step="any" data-f="closingDip" data-i="${i}" value="${esc(day.fuel.rows[i].closingDip)}"></td>
+          <td class="right num">${fmtNum(r.dipSold)}</td>
+          <td class="right num">${fmtNum(r.meterSold)}</td>
+          <td class="right num" style="color:${Math.abs(r.variancePct) >= (DB.meta.dipVarianceAlertPct||1.5) && r.meterSold>0 ? 'var(--red)' : 'inherit'}">${fmtNum(r.variance)}${r.meterSold>0 ? ` (${r.variancePct.toFixed(1)}%)` : ""}</td>
+          <td><input type="number" step="any" data-f="unitPrice" data-i="${i}" value="${esc(day.fuel.rows[i].unitPrice)}"></td>
+          <td><input type="number" step="any" data-f="unitCost" data-i="${i}" value="${esc(day.fuel.rows[i].unitCost)}"></td>
+          <td class="right num">${money(r.revenue)}</td>
+          <td class="right num">${r.closingPct != null ? r.closingPct.toFixed(0) + "%" : "—"}</td>
+          <td><input type="number" step="any" placeholder="qty short" data-f="shortageQty" data-i="${i}" value="${esc(day.fuel.rows[i].shortageQty)}" style="width:80px"></td>
+        </tr>
+      `).join("")}
+      </tbody>
+    </table></div>
+    <div class="mini-note">Tip: if "Sold (dip)" and "Sold (meter)" disagree by more than ${DB.meta.dipVarianceAlertPct}%, recheck the dip stick reading and pump meters before closing the day — this is the #1 way stations catch fuel theft or a leaking tank early.</div>
+  </div>`);
+
+  tankCard.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      day.fuel.rows[i][f] = inp.value;
+      saveDB();
+      maybeNotifyLowStock(day, i);
+      renderAll();
+    });
+  });
+  wrap.appendChild(tankCard);
+
+  const pumpCard = el(`<div class="card">
+    <h2>Pump meter readings</h2>
+    <div class="tablewrap"><table class="tight">
+      <thead><tr><th>Pump / Nozzle</th><th>Product</th><th class="right">Opening meter</th><th class="right">Closing meter</th><th class="right">Litres sold</th></tr></thead>
+      <tbody>${day.fuel.pumps.map((p, i) => {
+        const sold = Math.max(0, num(p.closingMeter) - num(p.openingMeter));
+        return `<tr>
+          <td>${esc(pumpName(p.pumpId))}</td>
+          <td>${esc(productName(p.productId))}</td>
+          <td><input type="number" step="any" data-pi="${i}" data-pf="openingMeter" value="${esc(p.openingMeter)}"></td>
+          <td><input type="number" step="any" data-pi="${i}" data-pf="closingMeter" value="${esc(p.closingMeter)}"></td>
+          <td class="right num">${fmtNum(sold)}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="empty">No pumps configured yet — add pumps in Settings.</td></tr>`}</tbody>
+    </table></div>
+  </div>`);
+  pumpCard.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const i = +inp.dataset.pi, f = inp.dataset.pf;
+      day.fuel.pumps[i][f] = inp.value;
+      saveDB(); renderAll();
+    });
+  });
+  wrap.appendChild(pumpCard);
+
+  wrap.appendChild(el(`<div class="card"><h2>Notes for the day</h2>
+    <textarea id="dayNotes" placeholder="Anything unusual today — price change, spot checks, visitor from depot, etc.">${esc(day.notes)}</textarea>
+  </div>`));
+  wrap.querySelector("#dayNotes").addEventListener("change", (e) => { day.notes = e.target.value; saveDB(); });
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Deliveries ---- */
+VIEW_RENDERERS.deliveries = function () {
+  const day = getDay(currentDate);
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const card = el(`<div class="card">
+    <h2>Incoming stock deliveries</h2>
+    <p class="hint">Record every truck that offloads today. Compare the dip reading taken <i>before</i> and <i>after</i> offloading against the waybill quantity — this is the standard way to catch a short-delivery (truck "washing"/diversion) before the driver leaves.</p>
+    <div class="tablewrap"><table class="tight" id="delivTable">
+      <thead><tr>
+        <th>Product</th><th>Supplier / Depot</th><th>Truck no.</th><th>Waybill no.</th>
+        <th class="right">Qty ordered</th><th class="right">Qty received</th><th class="right">Diff</th>
+        <th>Driver</th><th>Seal intact?</th><th>Sample kept?</th><th>Notes</th><th></th>
+      </tr></thead>
+      <tbody>${(day.deliveries||[]).map((d,i)=>renderDeliveryRow(d,i,c)).join("") || `<tr><td colspan="11" class="empty">No deliveries logged today.</td></tr>`}</tbody>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addDeliv">+ Add delivery</button></div>
+  </div>`);
+  wireDeliveryTable(card, day);
+  wrap.appendChild(card);
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+function renderDeliveryRow(d, i, c) {
+  const disc = c.deliveries[i] ? c.deliveries[i].discrepancy : (num(d.qtyOrdered) - num(d.qtyReceived));
+  return `<tr data-row="${i}">
+    <td><select data-df="productId">${DB.meta.products.map(p=>`<option value="${p.id}" ${p.id===d.productId?"selected":""}>${esc(p.name)}</option>`).join("")}</select></td>
+    <td><input data-df="supplier" value="${esc(d.supplier)}" placeholder="e.g. NNPC Depot"></td>
+    <td><input data-df="truckNo" value="${esc(d.truckNo)}" placeholder="plate no."></td>
+    <td><input data-df="waybillNo" value="${esc(d.waybillNo)}"></td>
+    <td><input type="number" step="any" data-df="qtyOrdered" value="${esc(d.qtyOrdered)}"></td>
+    <td><input type="number" step="any" data-df="qtyReceived" value="${esc(d.qtyReceived)}"></td>
+    <td class="right num" style="color:${disc?'var(--red)':'inherit'}">${fmtNum(disc)}</td>
+    <td><input data-df="driverName" value="${esc(d.driverName)}"></td>
+    <td><select data-df="sealIntact"><option value="true" ${d.sealIntact!==false?"selected":""}>Yes</option><option value="false" ${d.sealIntact===false?"selected":""}>No</option></select></td>
+    <td><select data-df="sampleRetained"><option value="true" ${d.sampleRetained?"selected":""}>Yes</option><option value="false" ${!d.sampleRetained?"selected":""}>No</option></select></td>
+    <td><input data-df="notes" value="${esc(d.notes)}"></td>
+    <td><button class="icon-btn" data-del="${i}" title="Remove">✕</button></td>
+  </tr>`;
+}
+
+function wireDeliveryTable(card, day) {
+  function rebind() {
+    card.querySelectorAll("[data-df]").forEach(inp => {
+      inp.addEventListener("change", () => {
+        const i = +inp.closest("tr").dataset.row;
+        let v = inp.value;
+        if (inp.dataset.df === "sealIntact" || inp.dataset.df === "sampleRetained") v = v === "true";
+        day.deliveries[i][inp.dataset.df] = v;
+        saveDB(); renderAll();
+      });
+    });
+    card.querySelectorAll("[data-del]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        day.deliveries.splice(+btn.dataset.del, 1);
+        saveDB(); renderAll();
+      });
+    });
+  }
+  rebind();
+  card.querySelector("#addDeliv").addEventListener("click", () => {
+    day.deliveries.push({ productId: DB.meta.products[0].id, supplier: "", truckNo: "", waybillNo: "", qtyOrdered: "", qtyReceived: "", driverName: "", sealIntact: true, sampleRetained: false, notes: "" });
+    saveDB(); renderAll();
+  });
+}
+
+/* ---- Product Shortage Log (explicitly requested feature) ---- */
+VIEW_RENDERERS.shortages = function () {
+  const day = getDay(currentDate);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const c = computeDay(day);
+  if (c.openShortages.length) {
+    const box = el(`<div class="card"><h2>⚠ Open shortages right now</h2></div>`);
+    c.openShortages.forEach(s => box.appendChild(el(`<div class="alert bad">${esc(productName(s.productId))} — out since ${esc(s.startTime||"—")}. ${esc(s.reason||"")}</div>`)));
+    wrap.appendChild(box);
+  }
+
+  const card = el(`<div class="card">
+    <h2>Product shortage / stock-out record</h2>
+    <p class="hint">Log every time a product runs out, is temporarily withdrawn (e.g. water found in tank), or a pump goes down. This turns "we ran out of fuel for a few hours" into a number you can act on — lost revenue, customers turned away, and how often each reason recurs — so you know whether the real fix is a bigger tank, a second supplier, or pump maintenance.</p>
+    <div class="tablewrap"><table class="tight" id="shortTable">
+      <thead><tr>
+        <th>Product</th><th>Status</th><th>Start time</th><th>End time</th>
+        <th class="right">Est. qty short</th><th class="right">Customers turned away</th>
+        <th class="right">Est. lost revenue</th><th>Reason</th><th>Notes</th><th></th>
+      </tr></thead>
+      <tbody>${(day.shortages||[]).map((s,i)=>renderShortageRow(s,i)).join("") || `<tr><td colspan="10" class="empty">No shortages logged today — good news.</td></tr>`}</tbody>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addShortage">+ Log a shortage</button></div>
+  </div>`);
+  wireShortageTable(card, day);
+  wrap.appendChild(card);
+
+  // Recurring-reason analytics across history for this station
+  const hist = allDaysSorted(DB.stationId);
+  const reasonTally = {};
+  let histLost = 0, histCount = 0;
+  hist.forEach(d => (d.shortages || []).forEach(s => {
+    reasonTally[s.reason || "Other"] = (reasonTally[s.reason || "Other"] || 0) + 1;
+    histLost += num(s.estLostRevenue);
+    histCount++;
+  }));
+  const reasonEntries = Object.entries(reasonTally).sort((a, b) => b[1] - a[1]);
+  if (histCount) {
+    const analyticsCard = el(`<div class="card">
+      <h2>Shortage pattern — all recorded history</h2>
+      <div class="kpis" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="kpi"><div class="label">Total incidents</div><div class="value">${histCount}</div></div>
+        <div class="kpi"><div class="label">Total lost revenue</div><div class="value neg">${money(histLost)}</div></div>
+        <div class="kpi"><div class="label">Most common cause</div><div class="value" style="font-size:14px">${esc(reasonEntries[0] ? reasonEntries[0][0] : "—")}</div></div>
+      </div>
+      <div class="mini-note">If one reason keeps repeating, it's usually cheaper to fix the root cause (e.g. a backup supplier, a bigger tank, or scheduled pump maintenance) than to keep absorbing the lost sales.</div>
+    </div>`);
+    wrap.appendChild(analyticsCard);
+  }
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+function renderShortageRow(s, i) {
+  return `<tr data-row="${i}">
+    <td><select data-sf="productId">${DB.meta.products.map(p=>`<option value="${p.id}" ${p.id===s.productId?"selected":""}>${esc(p.name)}</option>`).join("")}</select></td>
+    <td><select data-sf="status"><option value="ongoing" ${s.status!=="resolved"?"selected":""}>Ongoing</option><option value="resolved" ${s.status==="resolved"?"selected":""}>Resolved</option></select></td>
+    <td><input type="time" data-sf="startTime" value="${esc(s.startTime)}"></td>
+    <td><input type="time" data-sf="endTime" value="${esc(s.endTime)}"></td>
+    <td><input type="number" step="any" data-sf="qtyShortLiters" value="${esc(s.qtyShortLiters)}"></td>
+    <td><input type="number" step="any" data-sf="customersTurnedAway" value="${esc(s.customersTurnedAway)}"></td>
+    <td><input type="number" step="any" data-sf="estLostRevenue" value="${esc(s.estLostRevenue)}"></td>
+    <td><select data-sf="reason">${SHORTAGE_REASONS.map(r=>`<option ${r===s.reason?"selected":""}>${esc(r)}</option>`).join("")}</select></td>
+    <td><input data-sf="notes" value="${esc(s.notes)}"></td>
+    <td><button class="icon-btn" data-delshort="${i}" title="Remove">✕</button></td>
+  </tr>`;
+}
+
+function wireShortageTable(card, day) {
+  card.querySelectorAll("[data-sf]").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const i = +inp.closest("tr").dataset.row;
+      day.shortages[i][inp.dataset.sf] = inp.value;
+      saveDB();
+      maybeNotifyShortage(day, i);
+      renderAll();
+    });
+  });
+  card.querySelectorAll("[data-delshort]").forEach(btn => {
+    btn.addEventListener("click", () => { day.shortages.splice(+btn.dataset.delshort, 1); saveDB(); renderAll(); });
+  });
+  card.querySelector("#addShortage").addEventListener("click", () => {
+    const avg = DB.meta.avgDailyLitres || {};
+    day.shortages.push({ productId: DB.meta.products[0].id, status: "ongoing", startTime: "", endTime: "", qtyShortLiters: "", customersTurnedAway: "", estLostRevenue: "", reason: SHORTAGE_REASONS[0], notes: "" });
+    saveDB(); renderAll();
+  });
+}
+
+/* ---- Generator & Power ---- */
+VIEW_RENDERERS.generator = function () {
+  const day = getDay(currentDate);
+  const g = day.generator;
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const card = el(`<div class="card">
+    <h2>Generator diesel &amp; running hours</h2>
+    <p class="hint">Generator diesel is tracked separately from AGO pump stock so it doesn't get mixed into fuel sales. Set your generator diesel cost/litre in Settings to see the true daily power cost.</p>
+    <div class="grid cols-4">
+      <div class="field"><label>Diesel in tank — opening (L)</label><input type="number" step="any" id="gDieselOpen" value="${esc(g.dieselOpening)}"></div>
+      <div class="field"><label>Diesel added today (L)</label><input type="number" step="any" id="gDieselAdd" value="${esc(g.dieselAdded)}"></div>
+      <div class="field"><label>Diesel in tank — closing (L)</label><input type="number" step="any" id="gDieselClose" value="${esc(g.dieselClosing)}"></div>
+      <div class="field"><label>Litres used (auto)</label><input value="${fmtNum(c.generatorLitresUsed)}" disabled></div>
+      <div class="field"><label>Generator hour-meter — opening</label><input type="number" step="any" id="gHrOpen" value="${esc(g.openingHrs)}"></div>
+      <div class="field"><label>Generator hour-meter — closing</label><input type="number" step="any" id="gHrClose" value="${esc(g.closingHrs)}"></div>
+      <div class="field"><label>Hours run (auto)</label><input value="${fmtNum(c.generatorHoursRun)}" disabled></div>
+      <div class="field"><label>Est. diesel cost today (auto)</label><input value="${money(c.generatorCost)}" disabled></div>
+      <div class="field" style="grid-column:span 2"><label>NEPA / grid power available (hours today)</label><input type="number" step="any" id="gNepa" value="${esc(g.nepaHoursAvailable)}"></div>
+      <div class="field" style="grid-column:span 2"><label>Reason generator was run</label><input id="gPurpose" placeholder="e.g. pumps, lighting, freezers, no grid supply" value="${esc(g.purpose)}"></div>
+    </div>
+    <div class="mini-note">Tracking NEPA hours vs generator hours over time shows whether your real power cost is driven by grid failure or by running the generator unnecessarily.</div>
+  </div>`);
+  const bind = (id, field) => card.querySelector(id).addEventListener("change", (e) => { g[field] = e.target.value; saveDB(); renderAll(); });
+  bind("#gDieselOpen", "dieselOpening"); bind("#gDieselAdd", "dieselAdded"); bind("#gDieselClose", "dieselClosing");
+  bind("#gHrOpen", "openingHrs"); bind("#gHrClose", "closingHrs"); bind("#gNepa", "nepaHoursAvailable"); bind("#gPurpose", "purpose");
+  wrap.appendChild(card);
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Shop & Restaurant ---- */
+VIEW_RENDERERS.shop = function () {
+  const day = getDay(currentDate);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+  const c = computeDay(day);
+
+  const card = el(`<div class="card">
+    <h2>Supermarket &amp; restaurant sales</h2>
+    <p class="hint">One row per category (e.g. Drinks, Snacks, Provisions, Kitchen/Food) is usually enough for daily reconciliation — track spoilage separately since perishables (bread, cooked food, dairy) are a common silent loss in Nigerian heat without steady refrigeration.</p>
+    <div class="tablewrap"><table class="tight" id="shopTable">
+      <thead><tr><th>Category / item</th><th class="right">Opening stock value</th><th class="right">Closing stock value</th><th class="right">Sales amount</th><th class="right">Cost of goods sold</th><th class="right">Spoilage / waste value</th><th class="right">Profit</th><th></th></tr></thead>
+      <tbody>${(day.shop.items||[]).map((it,i)=>renderShopRow(it,i,c)).join("") || `<tr><td colspan="8" class="empty">No shop/restaurant items yet.</td></tr>`}</tbody>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addShopItem">+ Add category</button></div>
+  </div>`);
+  wireShopTable(card, day);
+  wrap.appendChild(card);
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+function renderShopRow(it, i, c) {
+  const row = c.shopRows[i] || { profit: 0 };
+  return `<tr data-row="${i}">
+    <td><input data-sh="category" value="${esc(it.category)}" placeholder="e.g. Drinks"></td>
+    <td><input type="number" step="any" data-sh="openingStock" value="${esc(it.openingStock)}"></td>
+    <td><input type="number" step="any" data-sh="closingStock" value="${esc(it.closingStock)}"></td>
+    <td><input type="number" step="any" data-sh="salesAmount" value="${esc(it.salesAmount)}"></td>
+    <td><input type="number" step="any" data-sh="costOfGoods" value="${esc(it.costOfGoods)}"></td>
+    <td><input type="number" step="any" data-sh="spoilage" value="${esc(it.spoilage)}"></td>
+    <td class="right num">${money(row.profit)}</td>
+    <td><button class="icon-btn" data-delshop="${i}">✕</button></td>
+  </tr>`;
+}
+function wireShopTable(card, day) {
+  card.querySelectorAll("[data-sh]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row;
+    day.shop.items[i][inp.dataset.sh] = inp.value; saveDB(); renderAll();
+  }));
+  card.querySelectorAll("[data-delshop]").forEach(btn => btn.addEventListener("click", () => {
+    day.shop.items.splice(+btn.dataset.delshop, 1); saveDB(); renderAll();
+  }));
+  card.querySelector("#addShopItem").addEventListener("click", () => {
+    day.shop.items.push({ category: "", openingStock: "", closingStock: "", salesAmount: "", costOfGoods: "", spoilage: "" });
+    saveDB(); renderAll();
+  });
+}
+
+/* ---- Staff & Salary ---- */
+VIEW_RENDERERS.staff = function () {
+  const day = getDay(currentDate);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const attCard = el(`<div class="card">
+    <h2>Staff attendance / shift log</h2>
+    <div class="tablewrap"><table class="tight" id="attTable">
+      <thead><tr><th>Name</th><th>Role</th><th>Shift</th><th>Time in</th><th>Time out</th><th>Present?</th><th></th></tr></thead>
+      <tbody>${(day.staff.attendance||[]).map((a,i)=>`<tr data-row="${i}">
+        <td><input data-af="name" value="${esc(a.name)}" list="staffNamesList"></td>
+        <td><input data-af="role" value="${esc(a.role)}" placeholder="attendant, cashier, security..."></td>
+        <td><select data-af="shift"><option ${a.shift==="Morning"?"selected":""}>Morning</option><option ${a.shift==="Afternoon"?"selected":""}>Afternoon</option><option ${a.shift==="Night"?"selected":""}>Night</option></select></td>
+        <td><input type="time" data-af="timeIn" value="${esc(a.timeIn)}"></td>
+        <td><input type="time" data-af="timeOut" value="${esc(a.timeOut)}"></td>
+        <td><select data-af="present"><option value="true" ${a.present!==false?"selected":""}>Present</option><option value="false" ${a.present===false?"selected":""}>Absent</option></select></td>
+        <td><button class="icon-btn" data-delatt="${i}">✕</button></td>
+      </tr>`).join("") || `<tr><td colspan="7" class="empty">No attendance logged.</td></tr>`}</tbody>
+    </table></div>
+    <datalist id="staffNamesList">${(DB.meta.staffList||[]).map(s=>`<option value="${esc(s.name)}">`).join("")}</datalist>
+    <div class="btnbar"><button class="btn" id="addAtt">+ Add staff row</button></div>
+  </div>`);
+  attCard.querySelectorAll("[data-af]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row; let v = inp.value;
+    if (inp.dataset.af === "present") v = v === "true";
+    day.staff.attendance[i][inp.dataset.af] = v; saveDB(); renderAll();
+  }));
+  attCard.querySelectorAll("[data-delatt]").forEach(btn => btn.addEventListener("click", () => {
+    day.staff.attendance.splice(+btn.dataset.delatt, 1); saveDB(); renderAll();
+  }));
+  attCard.querySelector("#addAtt").addEventListener("click", () => {
+    day.staff.attendance.push({ name: "", role: "", shift: "Morning", timeIn: "", timeOut: "", present: true });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(attCard);
+
+  const payCard = el(`<div class="card">
+    <h2>Salary / wages paid</h2>
+    <div class="tablewrap"><table class="tight" id="payTable">
+      <thead><tr><th>Name</th><th>Role</th><th class="right">Base amount</th><th class="right">Advance/loan deducted</th><th class="right">Other deduction</th><th class="right">Net paid</th><th>Paid?</th><th></th></tr></thead>
+      <tbody>${(day.staff.payroll||[]).map((p,i)=>{
+        const net = Math.max(0, num(p.baseAmount)-num(p.advance)-num(p.deduction));
+        return `<tr data-row="${i}">
+        <td><input data-pf="name" value="${esc(p.name)}" list="staffNamesList"></td>
+        <td><input data-pf="role" value="${esc(p.role)}"></td>
+        <td><input type="number" step="any" data-pf="baseAmount" value="${esc(p.baseAmount)}"></td>
+        <td><input type="number" step="any" data-pf="advance" value="${esc(p.advance)}"></td>
+        <td><input type="number" step="any" data-pf="deduction" value="${esc(p.deduction)}"></td>
+        <td class="right num">${money(net)}</td>
+        <td><select data-pf="paid"><option value="true" ${p.paid?"selected":""}>Paid</option><option value="false" ${!p.paid?"selected":""}>Pending</option></select></td>
+        <td><button class="icon-btn" data-delpay="${i}">✕</button></td>
+      </tr>`;}).join("") || `<tr><td colspan="8" class="empty">No payroll rows today.</td></tr>`}</tbody>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addPay">+ Add payroll row</button></div>
+  </div>`);
+  payCard.querySelectorAll("[data-pf]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row; let v = inp.value;
+    if (inp.dataset.pf === "paid") v = v === "true";
+    day.staff.payroll[i][inp.dataset.pf] = v; saveDB(); renderAll();
+  }));
+  payCard.querySelectorAll("[data-delpay]").forEach(btn => btn.addEventListener("click", () => {
+    day.staff.payroll.splice(+btn.dataset.delpay, 1); saveDB(); renderAll();
+  }));
+  payCard.querySelector("#addPay").addEventListener("click", () => {
+    day.staff.payroll.push({ name: "", role: "", baseAmount: "", advance: "", deduction: "", paid: false });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(payCard);
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Expenses ---- */
+VIEW_RENDERERS.expenses = function () {
+  const day = getDay(currentDate);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+  const c = computeDay(day);
+
+  const card = el(`<div class="card">
+    <h2>Other expenses &amp; levies</h2>
+    <p class="hint">Categories are pre-loaded for common Nigerian station costs — security levy, association dues (NUPENG/PTD), DPR/NMDPRA and local government levies, and informal task-force/community charges. Keeping these separate from fuel cost gives a true operating-margin picture.</p>
+    <div class="tablewrap"><table class="tight" id="expTable">
+      <thead><tr><th>Category</th><th>Description</th><th class="right">Amount</th><th></th></tr></thead>
+      <tbody>${(day.expenses||[]).map((e,i)=>`<tr data-row="${i}">
+        <td><select data-ef="category">${EXPENSE_CATEGORIES.map(cat=>`<option ${cat===e.category?"selected":""}>${esc(cat)}</option>`).join("")}</select></td>
+        <td><input data-ef="description" value="${esc(e.description)}"></td>
+        <td><input type="number" step="any" data-ef="amount" value="${esc(e.amount)}"></td>
+        <td><button class="icon-btn" data-delexp="${i}">✕</button></td>
+      </tr>`).join("") || `<tr><td colspan="4" class="empty">No expenses logged today.</td></tr>`}</tbody>
+      <tfoot><tr><td colspan="2" class="right"><b>Total</b></td><td class="right num"><b>${money(c.expensesTotal)}</b></td><td></td></tr></tfoot>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addExp">+ Add expense</button></div>
+  </div>`);
+  card.querySelectorAll("[data-ef]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row;
+    day.expenses[i][inp.dataset.ef] = inp.value; saveDB(); renderAll();
+  }));
+  card.querySelectorAll("[data-delexp]").forEach(btn => btn.addEventListener("click", () => {
+    day.expenses.splice(+btn.dataset.delexp, 1); saveDB(); renderAll();
+  }));
+  card.querySelector("#addExp").addEventListener("click", () => {
+    day.expenses.push({ category: EXPENSE_CATEGORIES[0], description: "", amount: "" });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(card);
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Payments & Debtors ---- */
+VIEW_RENDERERS.payments = function () {
+  const day = getDay(currentDate);
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const pcard = el(`<div class="card">
+    <h2>How today's sales were paid for</h2>
+    <p class="hint">Total revenue (fuel + shop) is calculated automatically. Enter what came in by POS, bank transfer, and on credit — whatever is left over is assumed to be cash, and that figure feeds the Till &amp; Bank tab. This split matters in Nigeria where POS network downtime is common and can quietly shift more of the day onto cash than expected.</p>
+    <div class="grid cols-4">
+      <div class="field"><label>Total revenue (auto)</label><input value="${money(c.totalRevenue)}" disabled></div>
+      <div class="field"><label>POS payments</label><input type="number" step="any" id="payPos" value="${esc(day.payments.pos)}"></div>
+      <div class="field"><label>Bank transfer</label><input type="number" step="any" id="payTransfer" value="${esc(day.payments.transfer)}"></div>
+      <div class="field"><label>Credit / "signature" sales</label><input type="number" step="any" id="payCredit" value="${esc(day.payments.credit)}"></div>
+    </div>
+    <div class="kpis" style="grid-template-columns:1fr">
+      <div class="kpi"><div class="label">Cash expected (auto)</div><div class="value">${money(c.cashSalesExpected)}</div></div>
+    </div>
+  </div>`);
+  const bind = (id, f) => pcard.querySelector(id).addEventListener("change", (e) => { day.payments[f] = e.target.value; saveDB(); renderAll(); });
+  bind("#payPos", "pos"); bind("#payTransfer", "transfer"); bind("#payCredit", "credit");
+  wrap.appendChild(pcard);
+
+  const dcard = el(`<div class="card">
+    <h2>Credit customers / debtors ledger</h2>
+    <p class="hint">For corporate or "signature" customers who buy now and pay later (haulage trucks, companies with fleet accounts). Running balance carries forward so you always know who owes what.</p>
+    <div class="tablewrap"><table class="tight" id="debtTable">
+      <thead><tr><th>Customer</th><th>Phone</th><th class="right">Previous balance</th><th class="right">New credit today</th><th class="right">Paid today</th><th class="right">Balance</th><th>Notes</th><th></th></tr></thead>
+      <tbody>${(day.debtors||[]).map((d,i)=>{
+        const bal = num(d.previousBalance)+num(d.newCredit)-num(d.amountPaid);
+        return `<tr data-row="${i}">
+        <td><input data-df2="customerName" value="${esc(d.customerName)}"></td>
+        <td><input data-df2="phone" value="${esc(d.phone)}"></td>
+        <td><input type="number" step="any" data-df2="previousBalance" value="${esc(d.previousBalance)}"></td>
+        <td><input type="number" step="any" data-df2="newCredit" value="${esc(d.newCredit)}"></td>
+        <td><input type="number" step="any" data-df2="amountPaid" value="${esc(d.amountPaid)}"></td>
+        <td class="right num" style="color:${bal>0?'var(--red)':'inherit'}">${money(bal)}</td>
+        <td><input data-df2="notes" value="${esc(d.notes)}"></td>
+        <td><button class="icon-btn" data-deldebt="${i}">✕</button></td>
+      </tr>`;}).join("") || `<tr><td colspan="8" class="empty">No credit sales today.</td></tr>`}</tbody>
+      <tfoot><tr><td colspan="5" class="right"><b>Total owed</b></td><td class="right num"><b>${money(c.totalDebtorsBalance)}</b></td><td colspan="2"></td></tr></tfoot>
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addDebt">+ Add debtor</button></div>
+    <div class="mini-note">Tip: next time you open this customer's row on a later day, carry today's "Balance" into "Previous balance" so the ledger stays accurate.</div>
+  </div>`);
+  dcard.querySelectorAll("[data-df2]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row;
+    day.debtors[i][inp.dataset.df2] = inp.value; saveDB(); renderAll();
+  }));
+  dcard.querySelectorAll("[data-deldebt]").forEach(btn => btn.addEventListener("click", () => {
+    day.debtors.splice(+btn.dataset.deldebt, 1); saveDB(); renderAll();
+  }));
+  dcard.querySelector("#addDebt").addEventListener("click", () => {
+    day.debtors.push({ customerName: "", phone: "", previousBalance: "", newCredit: "", amountPaid: "", notes: "" });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(dcard);
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Till & Bank ---- */
+VIEW_RENDERERS.till = function () {
+  const day = getDay(currentDate);
+  const t = day.till;
+  const c = computeDay(day);
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const card = el(`<div class="card">
+    <h2>Cash till reconciliation</h2>
+    <div class="grid cols-4">
+      <div class="field"><label>Opening float (cash left in till from before)</label><input type="number" step="any" id="tOpen" value="${esc(t.openingFloat)}"></div>
+      <div class="field"><label>Cash expenses paid straight from till</label><input type="number" step="any" id="tCashExp" value="${esc(t.cashExpensesPaidOut)}"></div>
+      <div class="field"><label>Expected cash in till (auto)</label><input value="${money(c.expectedCash)}" disabled></div>
+      <div class="field"><label>Cash actually counted</label><input type="number" step="any" id="tCounted" value="${esc(t.cashCounted)}"></div>
+    </div>
+    <div class="kpis" style="grid-template-columns:1fr">
+      <div class="kpi"><div class="label">Variance (counted − expected)</div><div class="value ${c.cashVariance<0?'neg':(c.cashVariance>0?'pos':'')}">${money(c.cashVariance)}</div>
+      <div class="sub">${Math.abs(c.cashVariance) < 1 ? "Balanced." : c.cashVariance < 0 ? "Till is short — investigate before close of day." : "Till has more than expected — double-check for a missed payment or a debtor payment not logged."}</div></div>
+    </div>
+  </div>`);
+  const bind = (id, f) => card.querySelector(id).addEventListener("change", (e) => {
+    t[f] = e.target.value; saveDB(); maybeNotifyVariance(day); renderAll();
+  });
+  bind("#tOpen", "openingFloat"); bind("#tCashExp", "cashExpensesPaidOut"); bind("#tCounted", "cashCounted");
+  wrap.appendChild(card);
+
+  const bcard = el(`<div class="card">
+    <h2>Bank lodgement</h2>
+    <div class="grid cols-3">
+      <div class="field"><label>Amount banked</label><input type="number" step="any" id="bAmt" value="${esc(t.bankedAmount)}"></div>
+      <div class="field"><label>Bank name</label><input id="bName" value="${esc(t.bankName)}"></div>
+      <div class="field"><label>Teller / deposit ref no.</label><input id="bTeller" value="${esc(t.tellerNo)}"></div>
+    </div>
+  </div>`);
+  const bind2 = (id, f) => bcard.querySelector(id).addEventListener("change", (e) => { t[f] = e.target.value; saveDB(); renderAll(); });
+  bind2("#bAmt", "bankedAmount"); bind2("#bName", "bankName"); bind2("#bTeller", "tellerNo");
+  wrap.appendChild(bcard);
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- Safety & Security ---- */
+VIEW_RENDERERS.safety = function () {
+  const day = getDay(currentDate);
+  const s = day.safety;
+  const wrap = el(`<div></div>`);
+  wrap.appendChild(el(dateBarHtml()));
+
+  const items = [
+    ["fireExtinguisher", "Fire extinguishers present, charged & accessible"],
+    ["spillKit", "Spill/absorbent kit available at dispenser area"],
+    ["noSmokingSignage", "\"No smoking / no phone\" signage visible"],
+    ["calibrationSeal", "Pump calibration seals intact (no tampering)"],
+    ["waterPasteTest", "Water-detection paste test done on tanks today"],
+    ["dprPermit", "DPR/NMDPRA operating permit displayed & valid"],
+    ["ppeAvailable", "Staff PPE (gloves, boots) available where needed"]
+  ];
+  const card = el(`<div class="card">
+    <h2>Daily safety &amp; compliance checklist</h2>
+    <p class="hint">A quick daily habit that matters for NMDPRA/DPR compliance and insurance, and catches adulteration (water-in-fuel) or tampering early.</p>
+    <div class="checklist">${items.map(([k,label]) => `
+      <label class="cb"><input type="checkbox" data-sk="${k}" ${s[k]?"checked":""}> ${esc(label)}</label>
+    `).join("")}</div>
+    <div class="field" style="margin-top:10px"><label>Notes</label><textarea id="safetyNotes">${esc(s.notes)}</textarea></div>
+  </div>`);
+  card.querySelectorAll("[data-sk]").forEach(cb => cb.addEventListener("change", () => { s[cb.dataset.sk] = cb.checked; saveDB(); renderAll(); }));
+  card.querySelector("#safetyNotes").addEventListener("change", (e) => { s.notes = e.target.value; saveDB(); });
+  wrap.appendChild(card);
+
+  const c = computeDay(day);
+  const secCard = el(`<div class="card">
+    <h2>Security incident log <span class="badge">${(day.security||[]).length}</span></h2>
+    <p class="hint">Theft, robbery attempts, drive-offs without payment, vandalism, or disputes — keep a dated record for insurance claims and pattern-spotting.</p>
+    <div class="tablewrap"><table class="tight" id="secTable">
+      <thead><tr><th>Time</th><th>Description</th><th class="right">Loss amount</th><th>Reported to police?</th><th></th></tr></thead>
+      <tbody>${(day.security||[]).map((x,i)=>`<tr data-row="${i}">
+        <td><input type="time" data-xf="time" value="${esc(x.time)}"></td>
+        <td><input data-xf="description" value="${esc(x.description)}"></td>
+        <td><input type="number" step="any" data-xf="lossAmount" value="${esc(x.lossAmount)}"></td>
+        <td><select data-xf="reportedToPolice"><option value="true" ${x.reportedToPolice?"selected":""}>Yes</option><option value="false" ${!x.reportedToPolice?"selected":""}>No</option></select></td>
+        <td><button class="icon-btn" data-delsec="${i}">✕</button></td>
+      </tr>`).join("") || `<tr><td colspan="5" class="empty">No incidents logged — good.</td></tr>`}</tbody>
+      ${c.securityLossTotal ? `<tfoot><tr><td colspan="2" class="right"><b>Total loss</b></td><td class="right num"><b>${money(c.securityLossTotal)}</b></td><td colspan="2"></td></tr></tfoot>` : ""}
+    </table></div>
+    <div class="btnbar"><button class="btn" id="addSec">+ Log incident</button></div>
+  </div>`);
+  secCard.querySelectorAll("[data-xf]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest("tr").dataset.row; let v = inp.value;
+    if (inp.dataset.xf === "reportedToPolice") v = v === "true";
+    day.security[i][inp.dataset.xf] = v; saveDB(); renderAll();
+  }));
+  secCard.querySelectorAll("[data-delsec]").forEach(btn => btn.addEventListener("click", () => {
+    day.security.splice(+btn.dataset.delsec, 1); saveDB(); renderAll();
+  }));
+  secCard.querySelector("#addSec").addEventListener("click", () => {
+    day.security.push({ time: "", description: "", lossAmount: "", reportedToPolice: false });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(secCard);
+
+  setTimeout(() => wireDateBar(wrap), 0);
+  return wrap;
+};
+
+/* ---- History ---- */
+VIEW_RENDERERS.history = function () {
+  const wrap = el(`<div></div>`);
+  const isDirector = DB.meta.role === "director";
+  const stations = stationList();
+
+  const filterCard = el(`<div class="card no-print">
+    <h2>Filter</h2>
+    <div class="grid cols-3">
+      <div class="field"><label>From date</label><input type="date" id="fFrom"></div>
+      <div class="field"><label>To date</label><input type="date" id="fTo"></div>
+      ${isDirector ? `<div class="field"><label>Station</label><select id="fStation"><option value="">All stations</option>${stations.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>` : ""}
+    </div>
+  </div>`);
+  wrap.appendChild(filterCard);
+
+  const resultsDiv = el(`<div></div>`);
+  wrap.appendChild(resultsDiv);
+
+  function renderResults() {
+    const from = filterCard.querySelector("#fFrom").value;
+    const to = filterCard.querySelector("#fTo").value;
+    const stationSel = isDirector ? filterCard.querySelector("#fStation").value : DB.stationId;
+    let rows = allDaysSorted(stationSel || null);
+    if (from) rows = rows.filter(d => d.date >= from);
+    if (to) rows = rows.filter(d => d.date <= to);
+
+    const totals = rows.reduce((a, d) => {
+      const c = computeDay(d);
+      a.revenue += c.totalRevenue; a.profit += c.netProfit; a.variance += c.cashVariance; a.lost += c.totalEstLostRevenue;
+      return a;
+    }, { revenue: 0, profit: 0, variance: 0, lost: 0 });
+
+    resultsDiv.innerHTML = "";
+    resultsDiv.appendChild(el(`<div class="kpis">
+      <div class="kpi"><div class="label">Days</div><div class="value">${rows.length}</div></div>
+      <div class="kpi"><div class="label">Revenue</div><div class="value">${money(totals.revenue)}</div></div>
+      <div class="kpi"><div class="label">Net profit</div><div class="value ${totals.profit<0?'neg':'pos'}">${money(totals.profit)}</div></div>
+      <div class="kpi"><div class="label">Lost sales</div><div class="value neg">${money(totals.lost)}</div></div>
+    </div>`));
+
+    const table = el(`<div class="card"><h2>Daily records</h2><div class="tablewrap"><table class="tight">
+      <thead><tr>${isDirector?"<th>Station</th>":""}<th>Date</th><th>Manager</th><th>Pump meters (start→close)</th><th class="right">Revenue</th><th class="right">Net profit</th><th class="right">Cash variance</th><th class="right">Shortages</th><th></th></tr></thead>
+      <tbody>${rows.map(d => {
+        const c = computeDay(d);
+        const meters = formatMeterSummary(d);
+        return `<tr>
+          ${isDirector?`<td>${esc(d.stationName||d.stationId)}</td>`:""}
+          <td>${niceDate(d.date)}</td>
+          <td>${esc(d.manager||"—")}</td>
+          <td style="font-size:12px;white-space:nowrap;max-width:260px;overflow-x:auto">${meters ? esc(meters) : '<span class="muted">—</span>'}</td>
+          <td class="right num">${money(c.totalRevenue)}</td>
+          <td class="right num">${money(c.netProfit)}</td>
+          <td class="right num" style="color:${c.cashVariance<0?'var(--red)':'inherit'}">${money(c.cashVariance)}</td>
+          <td class="right num">${c.shortages.length}</td>
+          <td><button class="btn ghost small" data-open="${d.date}" data-station="${d.stationId}">Open</button></td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="${isDirector?9:8}" class="empty">No records in this range.</td></tr>`}</tbody>
+    </table></div></div>`);
+    table.querySelectorAll("[data-open]").forEach(btn => btn.addEventListener("click", () => {
+      currentDate = btn.dataset.open;
+      DB.meta.role = "manager";
+      currentTab = "fuel";
+      renderAll();
+    }));
+    resultsDiv.appendChild(table);
+  }
+
+  filterCard.querySelectorAll("input,select").forEach(i => i.addEventListener("change", renderResults));
+  renderResults();
+  return wrap;
+};
+
+/* ---- Settings & Data ---- */
+VIEW_RENDERERS.settings = function () {
+  const wrap = el(`<div></div>`);
+  const m = DB.meta;
+
+  const infoCard = el(`<div class="card">
+    <h2>Station info</h2>
+    <div class="grid cols-2">
+      <div class="field"><label>Station name</label><input id="sName" value="${esc(m.stationName)}"></div>
+      <div class="field"><label>Manager name</label><input id="sManager" value="${esc(m.managerName)}"></div>
+      <div class="field" style="grid-column:span 2"><label>Address</label><input id="sAddr" value="${esc(m.address)}"></div>
+      <div class="field"><label>Currency symbol</label><input id="sCurrency" value="${esc(m.currency)}"></div>
+      <div class="field"><label>Generator diesel price / litre</label><input type="number" step="any" id="sGenPrice" value="${esc(m.generatorDieselPrice)}"></div>
+      <div class="field"><label>Dip-vs-meter variance alert (%)</label><input type="number" step="any" id="sVarPct" value="${esc(m.dipVarianceAlertPct)}"></div>
+      <div class="field"><label>Low-stock alert (% of tank capacity)</label><input type="number" step="any" id="sLowPct" value="${esc(m.lowStockAlertPct)}"></div>
+    </div>
+    <div class="mini-note">Station ID (used to keep your records separate when a Director imports several managers' files): <b>${esc(DB.stationId)}</b></div>
+  </div>`);
+  const bindM = (id, f, isNum) => infoCard.querySelector(id).addEventListener("change", (e) => { m[f] = e.target.value; saveDB(); renderAll(); });
+  bindM("#sName", "stationName"); bindM("#sManager", "managerName"); bindM("#sAddr", "address"); bindM("#sCurrency", "currency");
+  bindM("#sGenPrice", "generatorDieselPrice"); bindM("#sVarPct", "dipVarianceAlertPct"); bindM("#sLowPct", "lowStockAlertPct");
+  wrap.appendChild(infoCard);
+
+  // Products
+  const prodCard = el(`<div class="card">
+    <h2>Products &amp; tanks</h2>
+    <div class="settings-list" id="prodList">${m.products.map((p,i)=>`
+      <div class="item-row" data-i="${i}">
+        <input data-pf="name" value="${esc(p.name)}" placeholder="Product name">
+        <input data-pf="unit" value="${esc(p.unit)}" placeholder="unit" style="max-width:90px">
+        <input type="number" data-pf="tankCapacity" value="${esc(p.tankCapacity)}" placeholder="tank capacity" style="max-width:120px">
+        <button class="icon-btn" data-delp="${i}">✕</button>
+      </div>`).join("")}</div>
+    <div class="btnbar"><button class="btn small" id="addProd">+ Add product</button></div>
+  </div>`);
+  function wireProd() {
+    prodCard.querySelectorAll("[data-pf]").forEach(inp => inp.addEventListener("change", () => {
+      const i = +inp.closest(".item-row").dataset.i;
+      m.products[i][inp.dataset.pf] = inp.dataset.pf === "tankCapacity" ? num(inp.value) : inp.value;
+      saveDB(); renderAll();
+    }));
+    prodCard.querySelectorAll("[data-delp]").forEach(btn => btn.addEventListener("click", () => {
+      m.products.splice(+btn.dataset.delp, 1); saveDB(); renderAll();
+    }));
+  }
+  wireProd();
+  prodCard.querySelector("#addProd").addEventListener("click", () => {
+    m.products.push({ id: uid(), name: "New product", unit: "litres", tankCapacity: 0, defaultPrice: 0, defaultCost: 0 });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(prodCard);
+
+  // Pumps
+  const pumpCard = el(`<div class="card">
+    <h2>Pumps / nozzles</h2>
+    <div class="settings-list" id="pumpList">${m.pumps.map((p,i)=>`
+      <div class="item-row" data-i="${i}">
+        <input data-pmf="name" value="${esc(p.name)}" placeholder="Pump name">
+        <select data-pmf="productId">${m.products.map(pr=>`<option value="${pr.id}" ${pr.id===p.productId?"selected":""}>${esc(pr.name)}</option>`).join("")}</select>
+        <button class="icon-btn" data-delpm="${i}">✕</button>
+      </div>`).join("")}</div>
+    <div class="btnbar"><button class="btn small" id="addPump">+ Add pump</button></div>
+  </div>`);
+  pumpCard.querySelectorAll("[data-pmf]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest(".item-row").dataset.i;
+    m.pumps[i][inp.dataset.pmf] = inp.value; saveDB(); renderAll();
+  }));
+  pumpCard.querySelectorAll("[data-delpm]").forEach(btn => btn.addEventListener("click", () => {
+    m.pumps.splice(+btn.dataset.delpm, 1); saveDB(); renderAll();
+  }));
+  pumpCard.querySelector("#addPump").addEventListener("click", () => {
+    m.pumps.push({ id: uid(), name: "New pump", productId: m.products[0] ? m.products[0].id : "" });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(pumpCard);
+
+  // Staff list
+  const staffCard = el(`<div class="card">
+    <h2>Staff directory</h2>
+    <p class="hint">Optional — pre-fill names so attendance/payroll entry is a dropdown instead of retyping.</p>
+    <div class="settings-list" id="staffListEl">${(m.staffList||[]).map((s,i)=>`
+      <div class="item-row" data-i="${i}">
+        <input data-stf="name" value="${esc(s.name)}" placeholder="Staff name">
+        <input data-stf="role" value="${esc(s.role)}" placeholder="role">
+        <button class="icon-btn" data-delst="${i}">✕</button>
+      </div>`).join("")}</div>
+    <div class="btnbar"><button class="btn small" id="addStaff">+ Add staff member</button></div>
+  </div>`);
+  staffCard.querySelectorAll("[data-stf]").forEach(inp => inp.addEventListener("change", () => {
+    const i = +inp.closest(".item-row").dataset.i;
+    m.staffList[i][inp.dataset.stf] = inp.value; saveDB(); renderAll();
+  }));
+  staffCard.querySelectorAll("[data-delst]").forEach(btn => btn.addEventListener("click", () => {
+    m.staffList.splice(+btn.dataset.delst, 1); saveDB(); renderAll();
+  }));
+  staffCard.querySelector("#addStaff").addEventListener("click", () => {
+    m.staffList = m.staffList || [];
+    m.staffList.push({ name: "", role: "" });
+    saveDB(); renderAll();
+  });
+  wrap.appendChild(staffCard);
+
+  // Director Alerts — real-time email / SMS / push notifications
+  const al = m.alerts;
+  const alertsCard = el(`<div class="card">
+    <h2>Director Alerts <span class="badge">real-time</span></h2>
+    <p class="hint">When this app is hosted (not just opened as a local file), a shortage, a low tank, a cash-till mismatch, or a manual day summary can notify the Director directly — by email, SMS, and/or a push notification to their phone. Each channel needs its own setup (see the README), and any channel left off here is simply skipped.</p>
+    <div class="grid cols-2">
+      <div class="field"><label>Director's email</label><input id="alEmail" type="email" placeholder="director@example.com" value="${esc(al.directorEmail)}"></div>
+      <div class="field"><label>Director's phone (with country code)</label><input id="alPhone" placeholder="+234... or +233..." value="${esc(al.directorPhone)}"></div>
+    </div>
+    <div class="checklist">
+      <label class="cb"><input type="checkbox" id="alChEmail" ${al.channels.email?"checked":""}> Email alerts (via Resend)</label>
+      <label class="cb"><input type="checkbox" id="alChSms" ${al.channels.sms?"checked":""}> SMS alerts (via Africa's Talking)</label>
+      <label class="cb"><input type="checkbox" id="alChPush" ${al.channels.push?"checked":""}> Push notification (free, no account needed)</label>
+    </div>
+    <div class="field" style="margin-top:10px;max-width:260px"><label>Cash variance alert threshold</label><input type="number" step="any" id="alVarThresh" value="${esc(al.cashVarianceThreshold)}"></div>
+    <div class="btnbar">
+      <button class="btn secondary" id="enablePushBtn">🔔 Enable push notifications on this device</button>
+      <button class="btn ghost" id="sendTestAlertBtn">Send test alert</button>
+    </div>
+    <div class="mini-note">Tap "Enable push" on the <b>Director's own phone/laptop</b> (open this app there and sign in to Settings) — not on the manager's device. It links push delivery to the Director's email above.</div>
+  </div>`);
+  const bindAl = (id, f, isNum) => alertsCard.querySelector(id).addEventListener("change", (e) => {
+    al[f] = isNum ? e.target.value : e.target.value; saveDB();
+  });
+  bindAl("#alEmail", "directorEmail"); bindAl("#alPhone", "directorPhone"); bindAl("#alVarThresh", "cashVarianceThreshold", true);
+  alertsCard.querySelector("#alChEmail").addEventListener("change", (e) => { al.channels.email = e.target.checked; saveDB(); });
+  alertsCard.querySelector("#alChSms").addEventListener("change", (e) => { al.channels.sms = e.target.checked; saveDB(); });
+  alertsCard.querySelector("#alChPush").addEventListener("change", (e) => { al.channels.push = e.target.checked; saveDB(); });
+  alertsCard.querySelector("#enablePushBtn").addEventListener("click", enablePushOnThisDevice);
+  alertsCard.querySelector("#sendTestAlertBtn").addEventListener("click", sendTestAlert);
+  wrap.appendChild(alertsCard);
+
+  // Data: export / import / backup
+  const dataCard = el(`<div class="card">
+    <h2>Backup &amp; sharing data</h2>
+    <p class="hint">There's no cloud server here on purpose — it keeps this app free to run and usable with no or poor internet. Export regularly so you never lose a day's work, and use export/import to move numbers from a manager's phone to the Director's device.</p>
+    <div class="btnbar">
+      <button class="btn" id="exportBtn">⬇ Export all data (.json)</button>
+      <label class="btn secondary" style="cursor:pointer">⬆ Import data (.json)<input type="file" id="importFile" accept="application/json" style="display:none"></label>
+      <button class="btn ghost" id="exportCsvBtn">⬇ Export history as CSV (spreadsheet)</button>
+    </div>
+    <div class="mini-note" id="lastBackupNote"></div>
+  </div>`);
+  dataCard.querySelector("#exportBtn").addEventListener("click", exportData);
+  dataCard.querySelector("#exportCsvBtn").addEventListener("click", exportCsv);
+  dataCard.querySelector("#importFile").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) importDataFile(f);
+    e.target.value = "";
+  });
+  wrap.appendChild(dataCard);
+  setTimeout(() => {
+    const note = document.getElementById("lastBackupNote");
+    if (note) note.textContent = DB.lastBackupAt ? `Last exported: ${new Date(DB.lastBackupAt).toLocaleString("en-NG")}` : "You haven't exported a backup yet.";
+  }, 0);
+
+  // Danger zone
+  const dangerCard = el(`<div class="card">
+    <h2 style="color:var(--red)">Danger zone</h2>
+    <p class="hint">This clears data stored on <b>this device/browser only</b>. Always export a backup first.</p>
+    <div class="btnbar"><button class="btn danger" id="wipeBtn">Erase all data on this device</button></div>
+  </div>`);
+  dangerCard.querySelector("#wipeBtn").addEventListener("click", () => {
+    openModal(`
+      <h3>Erase all local data?</h3>
+      <p>This cannot be undone unless you have an exported backup. Type <b>DELETE</b> below to confirm.</p>
+      <div class="field"><input id="confirmDelete" placeholder="Type DELETE"></div>
+      <div class="btnbar">
+        <button class="btn danger" id="confirmWipeBtn">Erase everything</button>
+        <button class="btn ghost" id="cancelWipeBtn">Cancel</button>
+      </div>
+    `);
+    document.getElementById("cancelWipeBtn").addEventListener("click", closeModal);
+    document.getElementById("confirmWipeBtn").addEventListener("click", () => {
+      if (document.getElementById("confirmDelete").value === "DELETE") {
+        localStorage.removeItem(STORAGE_KEY);
+        loadDB();
+        closeModal();
+        renderAll();
+        toast("All local data erased.");
+      } else {
+        toast('Type DELETE exactly to confirm.');
+      }
+    });
+  });
+  wrap.appendChild(dangerCard);
+
+  return wrap;
+};
+
+/* ---------- Export / Import / CSV / Print ---------- */
+
+function exportData() {
+  DB.lastBackupAt = new Date().toISOString();
+  saveDB();
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safeName = (DB.meta.stationName || "station").replace(/[^a-z0-9]+/gi, "_");
+  a.href = url;
+  a.download = `${safeName}_${todayStr()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast("Backup exported.");
+}
+
+function importDataFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const incoming = JSON.parse(reader.result);
+      if (!incoming || !incoming.days) { toast("That file doesn't look like a valid export."); return; }
+      let added = 0, updated = 0;
+      Object.entries(incoming.days).forEach(([key, val]) => {
+        if (DB.days[key]) updated++; else added++;
+        DB.days[key] = val;
+      });
+      // Merge product/pump lists the importing device doesn't yet know (director convenience), without clobbering local names
+      if (incoming.meta && Array.isArray(incoming.meta.products)) {
+        incoming.meta.products.forEach(p => { if (!DB.meta.products.find(x => x.id === p.id)) DB.meta.products.push(p); });
+      }
+      saveDB();
+      renderAll();
+      toast(`Imported: ${added} new day(s), ${updated} updated.`);
+    } catch (e) {
+      console.error(e);
+      toast("Could not read that file — make sure it's a .json export from this app.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportCsv() {
+  const rows = allDaysSorted(DB.meta.role === "director" ? null : DB.stationId);
+  const header = ["Station", "Date", "Manager", "Pump Meters (start→close, litres sold)", "Fuel Revenue", "Shop Revenue", "Total Revenue", "COGS", "Expenses", "Payroll", "Generator Cost", "Net Profit", "Cash Variance", "Shortage Lost Revenue", "Customers Turned Away", "Debtors Balance", "Security Loss"];
+  const lines = [header.join(",")];
+  rows.forEach(d => {
+    const c = computeDay(d);
+    lines.push([
+      csvSafe(d.stationName || d.stationId), d.date, csvSafe(d.manager), csvSafe(formatMeterSummary(d, "; ")),
+      c.fuelRevenue.toFixed(2), c.shopRevenue.toFixed(2), c.totalRevenue.toFixed(2),
+      c.totalCostOfGoods.toFixed(2), c.expensesTotal.toFixed(2), c.payrollTotal.toFixed(2),
+      c.generatorCost.toFixed(2), c.netProfit.toFixed(2), c.cashVariance.toFixed(2),
+      c.totalEstLostRevenue.toFixed(2), c.totalCustomersTurnedAway, c.totalDebtorsBalance.toFixed(2),
+      c.securityLossTotal.toFixed(2)
+    ].join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `reconciliation_history_${todayStr()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast("CSV exported.");
+}
+function csvSafe(v) {
+  const s = String(v == null ? "" : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/* ---------- Init ---------- */
+
+function init() {
+  loadDB();
+  document.getElementById("roleSwitch").addEventListener("change", (e) => {
+    DB.meta.role = e.target.value;
+    currentTab = "dashboard";
+    saveDB(); renderAll();
+  });
+  renderAll();
+
+  /* Single-file standalone build: no service worker / install-as-app here.
+     Use the full folder + Netlify hosting for that, and for Director Alerts. */
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+
+</script>
+</body>
+</html>
